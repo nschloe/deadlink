@@ -44,7 +44,7 @@ async def _get_return_code(url: str, client):
 async def _get_all_return_codes(urls):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
-    limits = httpx.Limits()
+    limits = httpx.Limits(max_keepalive_connections=10, max_connections=100)
     async with httpx.AsyncClient(limits=limits) as client:
         tasks = map(lambda x: _get_return_code(x, client), urls)
         for task in track(
@@ -55,7 +55,6 @@ async def _get_all_return_codes(urls):
 
 
 def check(paths):
-
     urls = []
     for path in paths:
         path = Path(path)
