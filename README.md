@@ -24,5 +24,10 @@ urlchk -h
 ```
 for all options.
 
+Example output:
+
+![](https://nschloe.github.io/urlchk/example-output.png)
+
+
 ### License
 urlchk is published under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
