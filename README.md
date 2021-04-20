@@ -1,4 +1,7 @@
-# urlchk
+<p align="center">
+  <a href="https://github.com/nschloe/urlchk"><img alt="urlchk" src="https://nschloe.github.io/urlchk/logo.svg" width="60%"></a>
+  <p align="center">Checks URLs in text files.</p>
+</p>
 
 [![PyPi Version](https://img.shields.io/pypi/v/urlchk.svg?style=flat-square)](https://pypi.org/project/urlchk/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/urlchk.svg?style=flat-square)](https://pypi.org/project/urlchk/)
