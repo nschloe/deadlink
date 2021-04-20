@@ -36,7 +36,7 @@ def check(path):
     print(f"Found {len(matches)} URLs")
     not_ok = []
     for match in track(matches, description="Checking..."):
-        ret = requests.get(match)
+        ret = requests.get(match, allow_redirects=False)
         if ret.status_code != 200:
             not_ok.append((match, ret.status_code))
 
