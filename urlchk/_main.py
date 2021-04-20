@@ -26,6 +26,8 @@ async def _get_return_code(url: str, client, timeout: float):
     try:
         r = await client.head(url, allow_redirects=False, timeout=timeout)
     except httpx.ConnectTimeout:
+        return url, 998, None
+    except:
         return url, 999, None
     else:
         loc = r.headers["Location"] if "Location" in r.headers else None
@@ -86,6 +88,11 @@ def check(paths, timeout):
     timeout_errors = [
         (url, status_code, loc)
         for url, status_code, loc in not_ok
+        if status_code == 998
+    ]
+    other_errors = [
+        (url, status_code, loc)
+        for url, status_code, loc in not_ok
         if status_code == 999
     ]
 
@@ -114,6 +121,12 @@ def check(paths, timeout):
         print()
         console.print("Timeouts:", style="red")
         for url, status_code, _ in timeout_errors:
+            console.print(f"  {url}", style="red")
+
+    if len(other_errors) > 0:
+        print()
+        console.print("Other errors:", style="red")
+        for url, status_code, _ in other_errors:
             console.print(f"  {url}", style="red")
 
     return len(client_errors) > 0 or len(server_errors) > 0
