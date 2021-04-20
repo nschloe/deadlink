@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import requests
+from rich.console import Console
 from rich.progress import track
 
 # https://regexr.com/3e6m0
@@ -36,9 +37,42 @@ def check(path):
     print(f"Found {len(matches)} URLs")
     not_ok = []
     for match in track(matches, description="Checking..."):
-        ret = requests.get(match, allow_redirects=False)
+        ret = requests.head(match, allow_redirects=False)
         if ret.status_code != 200:
             not_ok.append((match, ret.status_code))
 
-    for url, status_code in not_ok:
-        print(f"NOT OK ({status_code}): {url}")
+    redirects = [
+        (url, status_code)
+        for url, status_code in not_ok
+        if status_code >= 300 and status_code < 400
+    ]
+    client_errors = [
+        (url, status_code)
+        for url, status_code in not_ok
+        if status_code >= 400 and status_code < 500
+    ]
+    server_errors = [
+        (url, status_code)
+        for url, status_code in not_ok
+        if status_code >= 500 and status_code < 600
+    ]
+
+    console = Console()
+
+    if len(redirects) > 0:
+        print()
+        console.print("Redirects:", style="yellow")
+        for url, status_code in redirects:
+            console.print(f"  {status_code}: {url}", style="yellow")
+
+    if len(client_errors) > 0:
+        print()
+        console.print("Client errors:", style="red")
+        for url, status_code in client_errors:
+            console.print(f"  {status_code}: {url}", style="red")
+
+    if len(server_errors) > 0:
+        print()
+        console.print("Server errors:")
+        for url, status_code in server_errors:
+            console.print(f"  {status_code}: {url}", style="red")
