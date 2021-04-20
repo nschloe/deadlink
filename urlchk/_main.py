@@ -34,6 +34,7 @@ async def _get_return_code(url: str, client, timeout: float):
         httpx.LocalProtocolError,
         httpx.ConnectError,
         httpx.ReadError,
+        httpx.PoolTimeout,
     ):
         return url, 999, None
     else:
