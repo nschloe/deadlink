@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 
 import httpx
-import requests
 from rich.console import Console
 from rich.progress import track
 
