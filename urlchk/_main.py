@@ -24,13 +24,17 @@ def _get_urls_from_file(path):
 
 
 async def _get_return_code(url: str, client):
-    try:
-        r = await client.head(url, allow_redirects=False)
-    except:
-        print("HELLO")
-        pass
-    loc = r.headers["Location"] if "Location" in r.headers else None
-    return url, r.status_code, loc
+    num_retries = 10
+    for _ in range(num_retries):
+        try:
+            r = await client.head(url, allow_redirects=False)
+        except httpx.ReadTimeout:
+            continue
+        else:
+            loc = r.headers["Location"] if "Location" in r.headers else None
+            return url, r.status_code, loc
+
+    raise RuntimeError("Max number of retries exceeded")
 
 
 async def _get_all_return_codes(urls):
