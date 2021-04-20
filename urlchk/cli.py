@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 from .__about__ import __version__
@@ -14,8 +15,6 @@ def main(argv=None):
 
 
 def _get_parser():
-    import argparse
-
     parser = argparse.ArgumentParser(
         description=("Check URLs in text files."),
         formatter_class=argparse.RawTextHelpFormatter,

@@ -27,7 +27,13 @@ async def _get_return_code(url: str, client, timeout: float):
         r = await client.head(url, allow_redirects=False, timeout=timeout)
     except httpx.ConnectTimeout:
         return url, 998, None
-    except:
+    except (
+        httpx.RemoteProtocolError,
+        httpx.ReadTimeout,
+        httpx.LocalProtocolError,
+        httpx.ConnectError,
+        httpx.ReadError,
+    ):
         return url, 999, None
     else:
         loc = r.headers["Location"] if "Location" in r.headers else None
