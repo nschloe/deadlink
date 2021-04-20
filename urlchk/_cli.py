@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from .__about__ import __version__
-from ._main import check
+from ._main import check_paths
 
 
 def main(argv=None):
@@ -10,8 +10,8 @@ def main(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = check(args.paths, args.timeout)
-    sys.exit(1 if has_errors else 0)
+    has_errors = check_paths(args.paths, args.timeout)
+    return 1 if has_errors else 0
 
 
 def _get_parser():
