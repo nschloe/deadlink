@@ -29,7 +29,7 @@ for all options.
 
 Example output:
 
-![](https://nschloe.github.io/urlchk/example-output.png)
+![](https://nschloe.github.io/urlchk/example-output-carbon.png)
 
 
 ### License
