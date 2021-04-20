@@ -9,7 +9,7 @@ def main(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = check(args.path)
+    has_errors = check(args.paths)
     sys.exit(1 if has_errors else 0)
 
 
@@ -21,7 +21,7 @@ def _get_parser():
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
-    parser.add_argument("path", type=str, help="file or path to check")
+    parser.add_argument("paths", type=str, nargs="+", help="files or paths to check")
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(

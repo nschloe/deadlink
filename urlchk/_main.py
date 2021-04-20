@@ -49,18 +49,19 @@ async def _get_all_return_codes(urls):
     return ret
 
 
-def check(path):
-    path = Path(path)
+def check(paths):
 
     matches = []
-    if path.is_dir():
-        for p in path.rglob("*"):
-            if p.is_file():
-                matches += _get_urls_from_file(p)
-    elif path.is_file():
-        matches += _get_urls_from_file(path)
-    else:
-        raise ValueError(f"Could not find path {path}")
+    for path in paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    matches += _get_urls_from_file(p)
+        elif path.is_file():
+            matches += _get_urls_from_file(path)
+        else:
+            raise ValueError(f"Could not find path {path}")
 
     print(f"Found {len(matches)} URLs")
     r = asyncio.run(_get_all_return_codes(matches))
