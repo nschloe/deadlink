@@ -9,7 +9,8 @@ def main(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    check(args.path)
+    has_errors = check(args.path)
+    sys.exit(1 if has_errors else 0)
 
 
 def _get_parser():

@@ -82,3 +82,5 @@ def check(path):
         console.print("Server errors:")
         for url, status_code, _ in server_errors:
             console.print(f"  {status_code}: {url}", style="red")
+
+    return len(client_errors) > 0 or len(server_errors) > 0
