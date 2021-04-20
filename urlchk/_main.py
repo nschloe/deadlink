@@ -1,6 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
+from typing import Set
 
 import httpx
 from rich.console import Console
@@ -53,7 +54,7 @@ async def _get_all_return_codes(urls, timeout):
     return ret
 
 
-def check(paths, timeout):
+def check_paths(paths, timeout: float):
     urls = []
     for path in paths:
         path = Path(path)
@@ -66,10 +67,13 @@ def check(paths, timeout):
         else:
             raise ValueError(f"Could not find path {path}")
 
-    # remove duplicated
+    # remove duplicate
     urls = set(urls)
-
     print(f"Found {len(urls)} unique HTTP URLs")
+    return check_urls(urls, timeout)
+
+
+def check_urls(urls: Set[str], timeout: float = 10.0):
     r = asyncio.run(_get_all_return_codes(urls, timeout))
     not_ok = [item for item in r if item[1] != 200]
 
@@ -135,4 +139,9 @@ def check(paths, timeout):
         for url, status_code, _ in other_errors:
             console.print(f"  {url}", style="red")
 
-    return len(client_errors) > 0 or len(server_errors) > 0
+    return (
+        len(client_errors) > 0
+        or len(server_errors) > 0
+        or len(timeout_errors) > 0
+        or len(other_errors) > 0
+    )
