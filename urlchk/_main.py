@@ -23,22 +23,13 @@ def _get_urls_from_file(path):
 
 
 async def _get_return_code(url: str, client):
-    num_retries = 10
-    for _ in range(num_retries):
-        try:
-            r = await client.head(url, allow_redirects=False)
-        except (
-            httpx.ReadTimeout,
-            httpx.RemoteProtocolError,
-            RuntimeError,
-            httpx.ConnectTimeout,
-        ):
-            continue
-        else:
-            loc = r.headers["Location"] if "Location" in r.headers else None
-            return url, r.status_code, loc
-
-    raise RuntimeError(f"Max number of retries exceeded for {url}")
+    try:
+        r = await client.head(url, allow_redirects=False, timeout=1.0)
+    except httpx.ConnectTimeout:
+        return url, 999, None
+    else:
+        loc = r.headers["Location"] if "Location" in r.headers else None
+        return url, r.status_code, loc
 
 
 async def _get_all_return_codes(urls):
@@ -92,6 +83,11 @@ def check(paths):
         for url, status_code, loc in not_ok
         if status_code >= 500 and status_code < 600
     ]
+    timeout_errors = [
+        (url, status_code, loc)
+        for url, status_code, loc in not_ok
+        if status_code == 999
+    ]
 
     console = Console()
 
@@ -110,8 +106,14 @@ def check(paths):
 
     if len(server_errors) > 0:
         print()
-        console.print("Server errors:")
+        console.print("Server errors:", style="red")
         for url, status_code, _ in server_errors:
             console.print(f"  {status_code}: {url}", style="red")
+
+    if len(timeout_errors) > 0:
+        print()
+        console.print("Timeouts:", style="red")
+        for url, status_code, _ in timeout_errors:
+            console.print(f"  {url}", style="red")
 
     return len(client_errors) > 0 or len(server_errors) > 0
