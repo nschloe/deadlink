@@ -41,6 +41,9 @@ def check(path):
         if ret.status_code != 200:
             not_ok.append((match, ret.status_code))
 
+    # sort by status code
+    not_ok.sort(key=lambda x: x[1])
+
     redirects = [
         (url, status_code)
         for url, status_code in not_ok
