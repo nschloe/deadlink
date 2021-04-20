@@ -37,26 +37,28 @@ def check(path):
     print(f"Found {len(matches)} URLs")
     not_ok = []
     for match in track(matches, description="Checking..."):
-        ret = requests.head(match, allow_redirects=False)
-        if ret.status_code != 200:
-            not_ok.append((match, ret.status_code))
+        r = requests.head(match, allow_redirects=False)
+        if "Location" in r.headers:
+            not_ok.append((match, r.status_code, r.headers["Location"]))
+        elif r.status_code != 200:
+            not_ok.append((match, r.status_code, None))
 
     # sort by status code
     not_ok.sort(key=lambda x: x[1])
 
     redirects = [
-        (url, status_code)
-        for url, status_code in not_ok
+        (url, status_code, loc)
+        for url, status_code, loc in not_ok
         if status_code >= 300 and status_code < 400
     ]
     client_errors = [
-        (url, status_code)
-        for url, status_code in not_ok
+        (url, status_code, loc)
+        for url, status_code, loc in not_ok
         if status_code >= 400 and status_code < 500
     ]
     server_errors = [
-        (url, status_code)
-        for url, status_code in not_ok
+        (url, status_code, loc)
+        for url, status_code, loc in not_ok
         if status_code >= 500 and status_code < 600
     ]
 
@@ -65,17 +67,18 @@ def check(path):
     if len(redirects) > 0:
         print()
         console.print("Redirects:", style="yellow")
-        for url, status_code in redirects:
+        for url, status_code, loc in redirects:
             console.print(f"  {status_code}: {url}", style="yellow")
+            console.print(f"     → {loc}", style="yellow")
 
     if len(client_errors) > 0:
         print()
         console.print("Client errors:", style="red")
-        for url, status_code in client_errors:
+        for url, status_code, _ in client_errors:
             console.print(f"  {status_code}: {url}", style="red")
 
     if len(server_errors) > 0:
         print()
         console.print("Server errors:")
-        for url, status_code in server_errors:
+        for url, status_code, _ in server_errors:
             console.print(f"  {status_code}: {url}", style="red")
