@@ -41,10 +41,15 @@ async def _get_return_code(url: str, client, timeout: float):
         return url, r.status_code, loc
 
 
-async def _get_all_return_codes(urls, timeout):
+async def _get_all_return_codes(
+    urls, timeout, max_connections, max_keepalive_connections
+):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
-    limits = httpx.Limits(max_keepalive_connections=10, max_connections=100)
+    limits = httpx.Limits(
+        max_keepalive_connections=max_keepalive_connections,
+        max_connections=max_connections,
+    )
     async with httpx.AsyncClient(limits=limits) as client:
         tasks = map(lambda x: _get_return_code(x, client, timeout), urls)
         for task in track(
@@ -54,7 +59,12 @@ async def _get_all_return_codes(urls, timeout):
     return ret
 
 
-def check_paths(paths, timeout: float):
+def check_paths(
+    paths,
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+):
     urls = []
     for path in paths:
         path = Path(path)
@@ -70,11 +80,18 @@ def check_paths(paths, timeout: float):
     # remove duplicate
     urls = set(urls)
     print(f"Found {len(urls)} unique HTTP URLs")
-    return check_urls(urls, timeout)
+    return check_urls(urls, timeout, max_connections, max_keepalive_connections)
 
 
-def check_urls(urls: Set[str], timeout: float = 10.0):
-    r = asyncio.run(_get_all_return_codes(urls, timeout))
+def check_urls(
+    urls: Set[str],
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+):
+    r = asyncio.run(
+        _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
+    )
     not_ok = [item for item in r if item[1] != 200]
 
     # sort by status code
