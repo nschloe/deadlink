@@ -1,7 +1,7 @@
 import sys
 
-from ._main import check
 from .__about__ import __version__
+from ._main import check
 
 
 def main(argv=None):
