@@ -27,13 +27,18 @@ async def _get_return_code(url: str, client):
     for _ in range(num_retries):
         try:
             r = await client.head(url, allow_redirects=False)
-        except httpx.ReadTimeout:
+        except (
+            httpx.ReadTimeout,
+            httpx.RemoteProtocolError,
+            RuntimeError,
+            httpx.ConnectTimeout,
+        ):
             continue
         else:
             loc = r.headers["Location"] if "Location" in r.headers else None
             return url, r.status_code, loc
 
-    raise RuntimeError("Max number of retries exceeded")
+    raise RuntimeError(f"Max number of retries exceeded for {url}")
 
 
 async def _get_all_return_codes(urls):
@@ -51,20 +56,23 @@ async def _get_all_return_codes(urls):
 
 def check(paths):
 
-    matches = []
+    urls = []
     for path in paths:
         path = Path(path)
         if path.is_dir():
             for p in path.rglob("*"):
                 if p.is_file():
-                    matches += _get_urls_from_file(p)
+                    urls += _get_urls_from_file(p)
         elif path.is_file():
-            matches += _get_urls_from_file(path)
+            urls += _get_urls_from_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
 
-    print(f"Found {len(matches)} URLs")
-    r = asyncio.run(_get_all_return_codes(matches))
+    # remove duplicated
+    urls = set(urls)
+
+    print(f"Found {len(urls)} unique HTTP URLs")
+    r = asyncio.run(_get_all_return_codes(urls))
     not_ok = [item for item in r if item[1] != 200]
 
     # sort by status code

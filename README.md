@@ -10,7 +10,19 @@
 [![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/urlchk.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/urlchk)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
-
+Parses text files for HTTP URLs and checks if they are still valid. Install with
+```
+pip install urlchk
+```
+and use as
+```sh
+urlchk README.md   # or multiple files/directories
+```
+See
+```
+urlchk -h
+```
+for all options.
 
 ### License
 urlchk is published under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
