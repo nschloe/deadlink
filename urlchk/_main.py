@@ -22,9 +22,9 @@ def _get_urls_from_file(path):
     return pattern.findall(content)
 
 
-async def _get_return_code(url: str, client):
+async def _get_return_code(url: str, client, timeout: float):
     try:
-        r = await client.head(url, allow_redirects=False, timeout=1.0)
+        r = await client.head(url, allow_redirects=False, timeout=timeout)
     except httpx.ConnectTimeout:
         return url, 999, None
     else:
@@ -32,12 +32,12 @@ async def _get_return_code(url: str, client):
         return url, r.status_code, loc
 
 
-async def _get_all_return_codes(urls):
+async def _get_all_return_codes(urls, timeout):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
     limits = httpx.Limits(max_keepalive_connections=10, max_connections=100)
     async with httpx.AsyncClient(limits=limits) as client:
-        tasks = map(lambda x: _get_return_code(x, client), urls)
+        tasks = map(lambda x: _get_return_code(x, client, timeout), urls)
         for task in track(
             asyncio.as_completed(tasks), description="Checking...", total=len(urls)
         ):
@@ -45,7 +45,7 @@ async def _get_all_return_codes(urls):
     return ret
 
 
-def check(paths):
+def check(paths, timeout):
     urls = []
     for path in paths:
         path = Path(path)
@@ -62,7 +62,7 @@ def check(paths):
     urls = set(urls)
 
     print(f"Found {len(urls)} unique HTTP URLs")
-    r = asyncio.run(_get_all_return_codes(urls))
+    r = asyncio.run(_get_all_return_codes(urls, timeout))
     not_ok = [item for item in r if item[1] != 200]
 
     # sort by status code

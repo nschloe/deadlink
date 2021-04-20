@@ -9,7 +9,7 @@ def main(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = check(args.paths)
+    has_errors = check(args.paths, args.timeout)
     sys.exit(1 if has_errors else 0)
 
 
@@ -22,6 +22,13 @@ def _get_parser():
     )
 
     parser.add_argument("paths", type=str, nargs="+", help="files or paths to check")
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        default=10.0,
+        help="connection timeout in seconds (default: 10)",
+    )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(
