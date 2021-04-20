@@ -29,10 +29,10 @@ def check(path):
         for p in path.rglob("*"):
             if p.is_file():
                 matches += _get_urls_from_file(p)
-    elif not path.is_file():
+    elif path.is_file():
         matches += _get_urls_from_file(path)
     else:
-        raise ValueError(f"Could not find path {path}.")
+        raise ValueError(f"Could not find path {path}")
 
     print(f"Found {len(matches)} URLs")
     not_ok = []
