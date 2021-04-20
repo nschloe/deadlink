@@ -1,6 +1,8 @@
+import asyncio
 import re
 from pathlib import Path
 
+import httpx
 import requests
 from rich.console import Console
 from rich.progress import track
@@ -21,6 +23,29 @@ def _get_urls_from_file(path):
     return pattern.findall(content)
 
 
+async def _get_return_code(url: str, client):
+    try:
+        r = await client.head(url, allow_redirects=False)
+    except:
+        print("HELLO")
+        pass
+    loc = r.headers["Location"] if "Location" in r.headers else None
+    return url, r.status_code, loc
+
+
+async def _get_all_return_codes(urls):
+    # return await asyncio.gather(*map(_get_return_code, urls))
+    ret = []
+    limits = httpx.Limits()
+    async with httpx.AsyncClient(limits=limits) as client:
+        tasks = map(lambda x: _get_return_code(x, client), urls)
+        for task in track(
+            asyncio.as_completed(tasks), description="Checking...", total=len(urls)
+        ):
+            ret.append(await task)
+    return ret
+
+
 def check(path):
     path = Path(path)
 
@@ -35,13 +60,8 @@ def check(path):
         raise ValueError(f"Could not find path {path}")
 
     print(f"Found {len(matches)} URLs")
-    not_ok = []
-    for match in track(matches, description="Checking..."):
-        r = requests.head(match, allow_redirects=False)
-        if "Location" in r.headers:
-            not_ok.append((match, r.status_code, r.headers["Location"]))
-        elif r.status_code != 200:
-            not_ok.append((match, r.status_code, None))
+    r = asyncio.run(_get_all_return_codes(matches))
+    not_ok = [item for item in r if item[1] != 200]
 
     # sort by status code
     not_ok.sort(key=lambda x: x[1])
