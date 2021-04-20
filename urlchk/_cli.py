@@ -10,7 +10,9 @@ def main(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = check_paths(args.paths, args.timeout)
+    has_errors = check_paths(
+        args.paths, args.timeout, args.max_connections, args.max_keepalive_connections
+    )
     return 1 if has_errors else 0
 
 
@@ -27,6 +29,20 @@ def _get_parser():
         type=float,
         default=10.0,
         help="connection timeout in seconds (default: 10)",
+    )
+    parser.add_argument(
+        "-c",
+        "--max-connections",
+        type=int,
+        default=100,
+        help="maximum number of allowable connections (default: 100)",
+    )
+    parser.add_argument(
+        "-k",
+        "--max-keepalive-connections",
+        type=int,
+        default=10,
+        help="number of allowable keep-alive connections (default: 10)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
