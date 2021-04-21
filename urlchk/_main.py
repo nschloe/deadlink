@@ -133,33 +133,17 @@ def check_urls(
             console.print(f"  {status_code}: {url}", style="yellow")
             console.print(f"     → {loc}", style="yellow")
 
-    if len(client_errors) > 0:
-        print()
-        console.print("Client errors:", style="red")
-        for url, status_code, _ in client_errors:
-            console.print(f"  {status_code}: {url}", style="red")
+    errors = {
+        "Client errors": client_errors,
+        "Server errors": server_errors,
+        "Timeouts": timeout_errors,
+        "Other errors": other_errors,
+    }
+    for key, err in errors.items():
+        if len(err) > 0:
+            print()
+            console.print(f"{key}:", style="red")
+            for url, status_code, _ in err:
+                console.print(f"  {status_code}: {url}", style="red")
 
-    if len(server_errors) > 0:
-        print()
-        console.print("Server errors:", style="red")
-        for url, status_code, _ in server_errors:
-            console.print(f"  {status_code}: {url}", style="red")
-
-    if len(timeout_errors) > 0:
-        print()
-        console.print("Timeouts:", style="red")
-        for url, status_code, _ in timeout_errors:
-            console.print(f"  {url}", style="red")
-
-    if len(other_errors) > 0:
-        print()
-        console.print("Other errors:", style="red")
-        for url, status_code, _ in other_errors:
-            console.print(f"  {url}", style="red")
-
-    return (
-        len(client_errors) > 0
-        or len(server_errors) > 0
-        or len(timeout_errors) > 0
-        or len(other_errors) > 0
-    )
+    return any(len(err) > 0 for err in errors.values())
