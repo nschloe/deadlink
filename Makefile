@@ -3,7 +3,7 @@ VERSION=$(shell python3 -c "from configparser import ConfigParser; p = ConfigPar
 default:
 	@echo "\"make publish\"?"
 
-# https://packaging.python.org/distributing/#id72
+# https://packaging.python.org/tutorials/packaging-projects/
 upload:
 	# Make sure we're on the main branch
 	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "main" ]; then exit 1; fi

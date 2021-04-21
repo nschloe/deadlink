@@ -98,31 +98,27 @@ def check_urls(
     # sort by status code
     not_ok.sort(key=lambda x: x[1])
 
-    redirects = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 300 and status_code < 400
-    ]
-    client_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 400 and status_code < 500
-    ]
-    server_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 500 and status_code < 600
-    ]
-    timeout_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code == 998
-    ]
-    other_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code == 999
-    ]
+    redirects = []
+    errors = {
+        "Client errors": [],
+        "Server errors": [],
+        "Timeouts": [],
+        "Other errors": [],
+    }
+    for item in not_ok:
+        status_code = item[1]
+        if 300 <= status_code < 400:
+            redirects.append(item)
+        elif 400 <= status_code < 500:
+            errors["Client errors"].append(item)
+        elif 500 <= status_code < 600:
+            errors["Server errors"].append(item)
+        elif status_code == 998:
+            errors["Timeouts"].append(item)
+        elif status_code == 999:
+            errors["Other errors"].append(item)
+        else:
+            raise RuntimeError(f"Unknown status code {status_code}")
 
     console = Console()
 
@@ -133,33 +129,11 @@ def check_urls(
             console.print(f"  {status_code}: {url}", style="yellow")
             console.print(f"     → {loc}", style="yellow")
 
-    if len(client_errors) > 0:
-        print()
-        console.print("Client errors:", style="red")
-        for url, status_code, _ in client_errors:
-            console.print(f"  {status_code}: {url}", style="red")
+    for key, err in errors.items():
+        if len(err) > 0:
+            print()
+            console.print(f"{key}:", style="red")
+            for url, status_code, _ in err:
+                console.print(f"  {status_code}: {url}", style="red")
 
-    if len(server_errors) > 0:
-        print()
-        console.print("Server errors:", style="red")
-        for url, status_code, _ in server_errors:
-            console.print(f"  {status_code}: {url}", style="red")
-
-    if len(timeout_errors) > 0:
-        print()
-        console.print("Timeouts:", style="red")
-        for url, status_code, _ in timeout_errors:
-            console.print(f"  {url}", style="red")
-
-    if len(other_errors) > 0:
-        print()
-        console.print("Other errors:", style="red")
-        for url, status_code, _ in other_errors:
-            console.print(f"  {url}", style="red")
-
-    return (
-        len(client_errors) > 0
-        or len(server_errors) > 0
-        or len(timeout_errors) > 0
-        or len(other_errors) > 0
-    )
+    return any(len(err) > 0 for err in errors.values())
