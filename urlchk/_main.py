@@ -98,31 +98,27 @@ def check_urls(
     # sort by status code
     not_ok.sort(key=lambda x: x[1])
 
-    redirects = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 300 and status_code < 400
-    ]
-    client_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 400 and status_code < 500
-    ]
-    server_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code >= 500 and status_code < 600
-    ]
-    timeout_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code == 998
-    ]
-    other_errors = [
-        (url, status_code, loc)
-        for url, status_code, loc in not_ok
-        if status_code == 999
-    ]
+    redirects = []
+    errors = {
+        "Client errors": [],
+        "Server errors": [],
+        "Timeouts": [],
+        "Other errors": [],
+    }
+    for item in not_ok:
+        status_code = item[1]
+        if 300 <= status_code < 400:
+            redirects.append(item)
+        elif 400 <= status_code < 500:
+            errors["Client errors"].append(item)
+        elif 500 <= status_code < 600:
+            errors["Server errors"].append(item)
+        elif status_code == 998:
+            errors["Timeouts"].append(item)
+        elif status_code == 999:
+            errors["Other errors"].append(item)
+        else:
+            raise RuntimeError(f"Unknown status code {status_code}")
 
     console = Console()
 
@@ -133,12 +129,6 @@ def check_urls(
             console.print(f"  {status_code}: {url}", style="yellow")
             console.print(f"     → {loc}", style="yellow")
 
-    errors = {
-        "Client errors": client_errors,
-        "Server errors": server_errors,
-        "Timeouts": timeout_errors,
-        "Other errors": other_errors,
-    }
     for key, err in errors.items():
         if len(err) > 0:
             print()
