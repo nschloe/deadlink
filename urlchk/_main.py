@@ -93,6 +93,7 @@ def check_urls(
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
+    num_ok = len([item for item in r if item[1] == 200])
     not_ok = [item for item in r if item[1] != 200]
 
     # sort by status code
@@ -122,9 +123,13 @@ def check_urls(
 
     console = Console()
 
+    if num_ok > 0:
+        print()
+        console.print(f"OK ({num_ok})", style="green")
+
     if len(redirects) > 0:
         print()
-        console.print("Redirects:", style="yellow")
+        console.print(f"Redirects ({len(redirects)}):", style="yellow")
         for url, status_code, loc in redirects:
             console.print(f"  {status_code}: {url}", style="yellow")
             console.print(f"     → {loc}", style="yellow")
@@ -132,8 +137,11 @@ def check_urls(
     for key, err in errors.items():
         if len(err) > 0:
             print()
-            console.print(f"{key}:", style="red")
+            console.print(f"{key} ({len(err)}):", style="red")
             for url, status_code, _ in err:
-                console.print(f"  {status_code}: {url}", style="red")
+                if status_code < 900:
+                    console.print(f"  {status_code}: {url}", style="red")
+                else:
+                    console.print(f"       {url}", style="red")
 
     return any(len(err) > 0 for err in errors.values())
