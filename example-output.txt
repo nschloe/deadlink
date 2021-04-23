@@ -1,0 +1,45 @@
+Found 87 unique HTTP URLs
+Checking... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+
+OK (68)
+
+Redirects (15):
+  301: http://nschloe.github.io/pygalmesh/elephant.vtu
+     → https://nschloe.github.io/pygalmesh/elephant.vtu
+  301: http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+     → https://en.wikipedia.org/wiki/Rotation_matrix
+  301: http://biomedicaloptics.spiedigitallibrary.org/article.aspx?articleid=2600985
+     → https://biomedicaloptics.spiedigitallibrary.org/article.aspx?articleid=2600985
+  301: https://pypi.org/pypi/pygalmesh/
+     → https://pypi.org/project/pygalmesh/
+  301: https://pypi.org/project/pygalmesh
+     → https://pypi.org/project/pygalmesh/
+  301: https://discord.gg/Z6DMsJh4Hr
+     → https://discord.com/invite/Z6DMsJh4Hr
+  301: http://stackoverflow.com/a/26168677/353337
+     → https://stackoverflow.com/a/26168677/353337
+  301: http://fsf.org/
+     → https://www.fsf.org/
+  301: http://iso2mesh.sf.net
+     → http://iso2mesh.sourceforge.net/
+  302: https://github.com/nschloe/pygalmesh/raw/gh-pages/lion-head.off
+     → https://raw.githubusercontent.com/nschloe/pygalmesh/gh-pages/lion-head.off
+  302: http://www.gnu.org/philosophy/why-not-lgpl.html
+     → http://www.gnu.org/licenses/why-not-lgpl.html
+  302: https://codecov.io/gh/nschloe/pygalmesh
+     → https://app.codecov.io/gh/nschloe/pygalmesh
+  302: https://join.slack.com/t/nschloe/shared_invite/zt-cofhrwm8-BgdrXAtVkOjnDmADROKD7A
+     → https://nschloe.slack.com/join/shared_invite/zt-cofhrwm8-BgdrXAtVkOjnDmADROKD7A
+  302: https://wustl.app.box.com/s/rqivtin0xcofjwlkz43acou8jknsbfx8/file/127108205145
+     → https://wustl.account.box.com/login?redirect_url=%2Fs%2Frqivtin0xcofjwlkz43acou8jknsbfx8
+%2Ffile%2F127108205145
+  302: https://anaconda.org/conda-forge/pygalmesh/badges/version.svg?=style=flat-square
+     → https://img.shields.io/badge/Anaconda.org-0.9.4-blue.svg?style=flat-square
+
+Client errors (3):
+  400: https://anaconda.org/conda-forge/pygalmesh/
+  404: https://github.com/nschloe/pygalmesh/raw/gh-pages/skull_2.9.inr
+  404: https://docs.pytest.org/en/latest/cache.html
+
+Timeouts (1):
+       https://upload.pypi.org/legacy/
