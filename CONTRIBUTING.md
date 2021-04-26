@@ -1,8 +1,8 @@
-# urlchk contributing guidelines
+# urli contributing guidelines
 
-The urlchk community appreciates your contributions via issues and
+The urli community appreciates your contributions via issues and
 pull requests.  Note that the [code of conduct](CODE_OF_CONDUCT.md)
-applies to all interactions with the urlchk project, including
+applies to all interactions with the urli project, including
 issues and pull requests.
 
 When submitting pull requests, please follow the style guidelines of

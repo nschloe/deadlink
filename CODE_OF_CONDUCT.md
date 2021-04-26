@@ -1,4 +1,4 @@
-# urlchk Code of Conduct
+# urli Code of Conduct
 
 ## Our Pledge
 

@@ -67,7 +67,7 @@ def _get_parser():
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(
         [
-            "urlchk {} [Python {}.{}.{}]".format(
+            "urli {} [Python {}.{}.{}]".format(
                 __version__,
                 sys.version_info.major,
                 sys.version_info.minor,

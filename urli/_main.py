@@ -136,7 +136,7 @@ def fix_paths(
 
 def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
     # check if there is a config file with more allowed/ignored domains
-    config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
+    config_file = Path(appdirs.user_config_dir()) / "urli" / "config.toml"
     try:
         with open(config_file) as f:
             out = toml.load(f)
