@@ -96,6 +96,44 @@ def check_paths(
     return has_errors
 
 
+def fix_paths(
+    paths,
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+    allow_set: Optional[Set[str]] = None,
+    ignore_set: Optional[Set[str]] = None,
+):
+    urls = []
+    for path in paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    urls += _get_urls_from_file(p)
+        elif path.is_file():
+            urls += _get_urls_from_file(path)
+        else:
+            raise ValueError(f"Could not find path {path}")
+
+    # remove duplicate
+    urls = set(urls)
+    print(f"Found {len(urls)} unique HTTP URLs")
+    d = check_urls(
+        urls, timeout, max_connections, max_keepalive_connections, allow_set, ignore_set
+    )
+
+    # only consider redirects
+    d = {"Redirects": d["Redirects"]}
+    print_to_screen(d)
+    exit(1)
+    has_errors = any(
+        len(d[key]) > 0
+        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
+    )
+    return has_errors
+
+
 def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
     # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
@@ -191,15 +229,15 @@ def print_to_screen(d):
 
     console = Console()
 
-    if len(d["OK"]) > 0:
+    if "OK" in d and len(d["OK"]) > 0:
         print()
         console.print(f"OK ({len(d['OK'])})", style="green")
 
-    if len(d["Ignored"]) > 0:
+    if "Ignored" in d and len(d["Ignored"]) > 0:
         print()
         console.print(f"Ignored ({len(d['Ignored'])})", style="white")
 
-    if len(d["Redirects"]) > 0:
+    if "Redirects" in d and len(d["Redirects"]) > 0:
         print()
         console.print(f"Redirects ({len(d['Redirects'])}):", style="yellow")
         for url, status_code, loc in d["Redirects"]:
@@ -207,6 +245,8 @@ def print_to_screen(d):
             console.print(f"     → {loc}", style="yellow")
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
+        if key not in d:
+            continue
         err = d[key]
         if len(err) > 0:
             print()
