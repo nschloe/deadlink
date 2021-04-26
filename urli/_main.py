@@ -165,16 +165,24 @@ def fix_paths(
         return 1
 
     def _replace_in_file(p):
-        # Read, replace, write
+        # read
         try:
             with open(p) as f:
                 content = f.read()
         except UnicodeDecodeError:
             return
+
+        # replace
+        is_changed = False
         for r in redirects:
+            if not is_changed and r[0] in content:
+                is_changed = True
             content = content.replace(r[0], r[2])
-        with open(p, "w") as f:
-            f.write(content)
+
+        # rewrite
+        if is_changed:
+            with open(p, "w") as f:
+                f.write(content)
 
     for path in paths:
         path = Path(path)
