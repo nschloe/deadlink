@@ -126,13 +126,17 @@ def fix_paths(
 
     # only consider redirects
     redirects = d["Redirects"]
+    if len(redirects) == 0:
+        print("No redirects found.")
+        return 0
+
     print_to_screen({"Redirects": redirects})
     print()
     print("Fix those redirects? [y/N] ", end="")
     choice = input().lower()
     if choice not in ["y", "yes"]:
         print("Abort.")
-        exit(1)
+        return 1
 
     for path in paths:
         path = Path(path)
