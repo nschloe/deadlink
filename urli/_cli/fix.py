@@ -2,15 +2,15 @@ import argparse
 import sys
 
 from ..__about__ import __version__
-from .._main import check_paths
+from .._main import fix_paths
 
 
-def check(argv=None):
+def fix(argv=None):
     # Parse command line arguments.
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = check_paths(
+    has_errors = fix_paths(
         args.paths,
         args.timeout,
         args.max_connections,
@@ -23,7 +23,7 @@ def check(argv=None):
 
 def _get_parser():
     parser = argparse.ArgumentParser(
-        description=("Check URLs in text files."),
+        description=("Fixes URLs in text files."),
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
