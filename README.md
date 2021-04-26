@@ -21,6 +21,17 @@ and use as
 ```sh
 urlchk README.md   # or multiple files/directories
 ```
+With
+```
+urlchk README.md -i stackoverflow.com github.com
+```
+you can ignore domains. You can also place ignored domains in the config file
+`~/.config/urlchk/config.toml`, e.g.,
+```toml
+ignore = [
+  "stackoverflow.com",
+]
+```
 See
 ```
 urlchk -h

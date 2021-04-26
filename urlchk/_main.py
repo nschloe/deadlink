@@ -1,9 +1,12 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Set
+from typing import Optional, Set
+from urllib.parse import urlparse
 
+import appdirs
 import httpx
+import toml
 from rich.console import Console
 from rich.progress import track
 
@@ -65,6 +68,7 @@ def check_paths(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    ignore_domains: Optional[Set[str]] = None,
 ):
     urls = []
     for path in paths:
@@ -81,7 +85,39 @@ def check_paths(
     # remove duplicate
     urls = set(urls)
     print(f"Found {len(urls)} unique HTTP URLs")
-    return check_urls(urls, timeout, max_connections, max_keepalive_connections)
+    d = check_urls(
+        urls, timeout, max_connections, max_keepalive_connections, ignore_domains
+    )
+    print_to_screen(d)
+    has_errors = any(
+        len(d[key]) > 0
+        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
+    )
+    return has_errors
+
+
+def _filter_ignored(urls, ignore_domains):
+    # check if there is a config file with more ignored domains
+    config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
+    try:
+        with open(config_file) as f:
+            out = toml.load(f)
+    except FileNotFoundError:
+        pass
+    else:
+        ignore_domains = ignore_domains.union(set(out["ignore"]))
+
+    # filter out the ignored urls
+    ignored_urls = set()
+    filtered_urls = set()
+    for url in urls:
+        parsed_uri = urlparse(url)
+        if parsed_uri.netloc in ignore_domains:
+            ignored_urls.add(url)
+        else:
+            filtered_urls.add(url)
+    urls = filtered_urls
+    return urls, ignored_urls
 
 
 def check_urls(
@@ -89,52 +125,70 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    ignore_domains: Optional[Set[str]] = None,
 ):
+    if ignore_domains is None:
+        ignore_domains = set()
+
+    urls, ignored_urls = _filter_ignored(urls, ignore_domains)
+
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
-    num_ok = len([item for item in r if item[1] == 200])
-    not_ok = [item for item in r if item[1] != 200]
-
-    # sort by status code
-    not_ok.sort(key=lambda x: x[1])
-
-    redirects = []
-    errors = {
+    # sort results into dictionary
+    d = {
+        "OK": [],
+        "Ignored": ignored_urls,
+        "Redirects": [],
         "Client errors": [],
         "Server errors": [],
         "Timeouts": [],
         "Other errors": [],
     }
-    for item in not_ok:
+    for item in r:
         status_code = item[1]
-        if 300 <= status_code < 400:
-            redirects.append(item)
+        if 200 <= status_code < 300:
+            d["OK"].append(item)
+        elif 300 <= status_code < 400:
+            d["Redirects"].append(item)
         elif 400 <= status_code < 500:
-            errors["Client errors"].append(item)
+            d["Client errors"].append(item)
         elif 500 <= status_code < 600:
-            errors["Server errors"].append(item)
+            d["Server errors"].append(item)
         elif status_code == 998:
-            errors["Timeouts"].append(item)
+            d["Timeouts"].append(item)
         elif status_code == 999:
-            errors["Other errors"].append(item)
+            d["Other errors"].append(item)
         else:
             raise RuntimeError(f"Unknown status code {status_code}")
 
+    return d
+
+
+def print_to_screen(d):
+    # sort by status code
+    for key, value in d.items():
+        d[key] = sorted(value, key=lambda x: x[1])
+
     console = Console()
 
-    if num_ok > 0:
+    if len(d["OK"]) > 0:
         print()
-        console.print(f"OK ({num_ok})", style="green")
+        console.print(f"OK ({len(d['OK'])})", style="green")
 
-    if len(redirects) > 0:
+    if len(d["Ignored"]) > 0:
         print()
-        console.print(f"Redirects ({len(redirects)}):", style="yellow")
-        for url, status_code, loc in redirects:
+        console.print(f"Ignored ({len(d['Ignored'])})", style="white")
+
+    if len(d["Redirects"]) > 0:
+        print()
+        console.print(f"Redirects ({len(d['Redirects'])}):", style="yellow")
+        for url, status_code, loc in d["Redirects"]:
             console.print(f"  {status_code}: {url}", style="yellow")
             console.print(f"     → {loc}", style="yellow")
 
-    for key, err in errors.items():
+    for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
+        err = d[key]
         if len(err) > 0:
             print()
             console.print(f"{key} ({len(err)}):", style="red")
@@ -142,6 +196,4 @@ def check_urls(
                 if status_code < 900:
                     console.print(f"  {status_code}: {url}", style="red")
                 else:
-                    console.print(f"       {url}", style="red")
-
-    return any(len(err) > 0 for err in errors.values())
+                    console.print(f"  {url}", style="red")
