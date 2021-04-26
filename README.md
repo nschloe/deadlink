@@ -50,5 +50,10 @@ Example output:
 ![](https://nschloe.github.io/urli/example-output-carbon.png)
 
 
+### Logo art
+
+Logo art by [b0red](https://pixabay.com/users/b0red-4473488/).
+
+
 ### License
 urli is published under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
