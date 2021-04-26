@@ -41,13 +41,17 @@ async def _get_return_code(url: str, client, timeout: float):
     ):
         return url, 999, None
 
-    loc = r.headers["Location"] if "Location" in r.headers else None
-    # The URL fragment, if (the part after a #-sign, if there is one) is not contained
-    # in the redirect location because it's not sent to the server in the first place.
-    # Append it manually.
-    url_parsed = urlparse(url)
-    if len(url_parsed.fragment) > 0:
-        loc += "#" + url_parsed.fragment
+    if "Location" in r.headers:
+        loc = r.headers["Location"]
+        # The URL fragment, if (the part after a #-sign, if there is one) is not
+        # contained in the redirect location because it's not sent to the server in the
+        # first place.  Append it manually.
+        url_parsed = urlparse(url)
+        if len(url_parsed.fragment) > 0:
+            loc += "#" + url_parsed.fragment
+    else:
+        loc = None
+
     return url, r.status_code, loc
 
 
