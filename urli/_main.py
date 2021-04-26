@@ -1,5 +1,6 @@
 import asyncio
 import re
+import sys
 from pathlib import Path
 from typing import Optional, Set
 
@@ -124,14 +125,38 @@ def fix_paths(
     )
 
     # only consider redirects
-    d = {"Redirects": d["Redirects"]}
-    print_to_screen(d)
-    exit(1)
-    has_errors = any(
-        len(d[key]) > 0
-        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
-    )
-    return has_errors
+    redirects = d["Redirects"]
+    print_to_screen({"Redirects": redirects})
+    print()
+    print("Fix those redirects? [y/N] ", end="")
+    choice = input().lower()
+    if choice not in ["y", "yes"]:
+        print("Abort.")
+        exit(1)
+
+    for path in paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    # Read, replace, write
+                    with open(p) as f:
+                        content = f.read()
+                    for r in redirects:
+                        content = content.replace(r[0], r[2])
+                    with open(p, "w") as f:
+                        f.write(content)
+
+        elif path.is_file():
+            # Read, replace, write
+            with open(path) as f:
+                content = f.read()
+            for r in redirects:
+                content = content.replace(r[0], r[2])
+            with open(path, "w") as f:
+                f.write(content)
+        else:
+            raise ValueError(f"Could not find path {path}")
 
 
 def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
