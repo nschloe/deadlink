@@ -96,8 +96,8 @@ def check_paths(
     return has_errors
 
 
-def _filter_ignored(urls, allow_set: Set[str], ignore_set: Set[str]):
-    # check if there is a config file with more ignored domains
+def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
+    # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
     try:
         with open(config_file) as f:
@@ -105,7 +105,10 @@ def _filter_ignored(urls, allow_set: Set[str], ignore_set: Set[str]):
     except FileNotFoundError:
         pass
     else:
-        ignore_set = ignore_set.union(set(out["ignore"]))
+        if "allow" in out:
+            allow_set = allow_set.union(set(out["allow"]))
+        if "ignore" in out:
+            ignore_set = ignore_set.union(set(out["ignore"]))
 
     # filter out non-allowed and ignored urls
     allowed_urls = set()
@@ -146,7 +149,7 @@ def check_urls(
     if ignore_set is None:
         ignore_set = set()
 
-    urls, ignored_urls = _filter_ignored(urls, allow_set, ignore_set)
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
 
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
