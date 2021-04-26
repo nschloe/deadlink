@@ -25,11 +25,14 @@ With
 ```
 urlchk README.md -i stackoverflow.com github.com
 ```
-you can ignore domains. You can also place ignored domains in the config file
+you can ignore some URLs. You can also place ignore strings in the config file
 `~/.config/urlchk/config.toml`, e.g.,
 ```toml
 ignore = [
   "stackoverflow.com",
+  "math.stackexchange.com",
+  "discord.gg",
+  "doi.org",
 ]
 ```
 See
