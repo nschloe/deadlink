@@ -15,7 +15,7 @@ def main(argv=None):
         args.timeout,
         args.max_connections,
         args.max_keepalive_connections,
-        args.whitelist,
+        None if args.whitelist is None else set(args.whitelist),
     )
     return 1 if has_errors else 0
 
@@ -52,7 +52,7 @@ def _get_parser():
         "-w",
         "--whitelist",
         type=str,
-        nargs="*",
+        nargs="+",
         help="whitelisted domain names (e.g., github.com)",
     )
 

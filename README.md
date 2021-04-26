@@ -21,6 +21,11 @@ and use as
 ```sh
 urlchk README.md   # or multiple files/directories
 ```
+With
+```
+urlchk -w stackoverflow.com github.com README.md
+```
+
 See
 ```
 urlchk -h
