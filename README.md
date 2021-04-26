@@ -23,7 +23,7 @@ urli-check README.md   # or multiple files/directories
 ```
 To explicitly allow or ignore certain URLs, use
 ```
-urli README.md -a http: -i stackoverflow.com github
+urli-check README.md -a http: -i stackoverflow.com github
 ```
 This only considers URLs containing `http:` and _not_ containing `stackoverflow.com` or
 `github`. You can also place allow and ignore lists in the config file
