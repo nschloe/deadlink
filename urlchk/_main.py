@@ -90,16 +90,7 @@ def check_paths(
     )
 
 
-def check_urls(
-    urls: Set[str],
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    ignore_domains: Optional[Set[str]] = None,
-):
-    if ignore_domains is None:
-        ignore_domains = set()
-
+def _filter_ignored(urls, ignore_domains):
     # check if there is a config file with more ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
     try:
@@ -120,6 +111,20 @@ def check_urls(
         else:
             filtered_urls.add(url)
     urls = filtered_urls
+    return urls, ignored_urls
+
+
+def check_urls(
+    urls: Set[str],
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+    ignore_domains: Optional[Set[str]] = None,
+):
+    if ignore_domains is None:
+        ignore_domains = set()
+
+    urls, ignored_urls = _filter_ignored(urls, ignore_domains)
 
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
