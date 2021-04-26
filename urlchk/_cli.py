@@ -15,6 +15,7 @@ def main(argv=None):
         args.timeout,
         args.max_connections,
         args.max_keepalive_connections,
+        None if args.allow is None else set(args.allow),
         None if args.ignore is None else set(args.ignore),
     )
     return 1 if has_errors else 0
@@ -53,7 +54,14 @@ def _get_parser():
         "--ignore",
         type=str,
         nargs="+",
-        help="ignore urls containing these strings (e.g., github.com)",
+        help="ignore URLs containing these strings (e.g., github.com)",
+    )
+    parser.add_argument(
+        "-a",
+        "--allow",
+        type=str,
+        nargs="+",
+        help="only consider URLs containing these strings (e.g., http:)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
