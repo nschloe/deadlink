@@ -5,6 +5,6 @@ except ImportError:
     import importlib_metadata as metadata
 
 try:
-    __version__ = metadata.version("urlchk")
+    __version__ = metadata.version("urli")
 except Exception:
     __version__ = "unknown"

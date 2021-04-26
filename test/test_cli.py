@@ -1,9 +1,9 @@
 import pathlib
 
-import urlchk
+import urli
 
 
 def test_cli():
     this_dir = pathlib.Path(__file__).resolve().parent
     files = str((this_dir / ".." / "README.md").resolve())
-    urlchk._cli.main([files])
+    urli._cli.check([files])

@@ -70,6 +70,25 @@ def check_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
+    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
+
+    print_to_screen(d)
+    has_errors = any(
+        len(d[key]) > 0
+        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
+    )
+    return has_errors
+
+
+def _find_urls(paths, allow_set, ignore_set):
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
+
     urls = []
     for path in paths:
         path = Path(path)
@@ -81,24 +100,66 @@ def check_paths(
             urls += _get_urls_from_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
-
-    # remove duplicate
     urls = set(urls)
-    print(f"Found {len(urls)} unique HTTP URLs")
-    d = check_urls(
-        urls, timeout, max_connections, max_keepalive_connections, allow_set, ignore_set
-    )
-    print_to_screen(d)
-    has_errors = any(
-        len(d[key]) > 0
-        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
-    )
-    return has_errors
+
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
+    return urls, ignored_urls
+
+
+def fix_paths(
+    paths,
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+    allow_set: Optional[Set[str]] = None,
+    ignore_set: Optional[Set[str]] = None,
+):
+    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
+
+    # only consider redirects
+    redirects = d["Redirects"]
+    if len(redirects) == 0:
+        print("No redirects found.")
+        return 0
+
+    print_to_screen({"Redirects": redirects})
+    print()
+    print("Replace those redirects? [y/N] ", end="")
+    choice = input().lower()
+    if choice not in ["y", "yes"]:
+        print("Abort.")
+        return 1
+
+    def _replace_in_file(p):
+        # Read, replace, write
+        try:
+            with open(p) as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            return
+        for r in redirects:
+            content = content.replace(r[0], r[2])
+        with open(p, "w") as f:
+            f.write(content)
+
+    for path in paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    _replace_in_file(p)
+        elif path.is_file():
+            _replace_in_file(path)
+        else:
+            raise ValueError(f"Could not find path {path}")
 
 
 def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
     # check if there is a config file with more allowed/ignored domains
-    config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
+    config_file = Path(appdirs.user_config_dir()) / "urli" / "config.toml"
     try:
         with open(config_file) as f:
             out = toml.load(f)
@@ -141,23 +202,13 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
 ):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
     # sort results into dictionary
     d = {
         "OK": [],
-        "Ignored": ignored_urls,
         "Redirects": [],
         "Client errors": [],
         "Server errors": [],
@@ -191,15 +242,15 @@ def print_to_screen(d):
 
     console = Console()
 
-    if len(d["OK"]) > 0:
+    if "OK" in d and len(d["OK"]) > 0:
         print()
         console.print(f"OK ({len(d['OK'])})", style="green")
 
-    if len(d["Ignored"]) > 0:
+    if "Ignored" in d and len(d["Ignored"]) > 0:
         print()
         console.print(f"Ignored ({len(d['Ignored'])})", style="white")
 
-    if len(d["Redirects"]) > 0:
+    if "Redirects" in d and len(d["Redirects"]) > 0:
         print()
         console.print(f"Redirects ({len(d['Redirects'])}):", style="yellow")
         for url, status_code, loc in d["Redirects"]:
@@ -207,6 +258,8 @@ def print_to_screen(d):
             console.print(f"     → {loc}", style="yellow")
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
+        if key not in d:
+            continue
         err = d[key]
         if len(err) > 0:
             print()
