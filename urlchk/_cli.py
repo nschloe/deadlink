@@ -11,7 +11,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     has_errors = check_paths(
-        args.paths, args.timeout, args.max_connections, args.max_keepalive_connections
+        args.paths,
+        args.timeout,
+        args.max_connections,
+        args.max_keepalive_connections,
+        args.whitelist,
     )
     return 1 if has_errors else 0
 
@@ -43,6 +47,13 @@ def _get_parser():
         type=int,
         default=10,
         help="number of allowable keep-alive connections (default: 10)",
+    )
+    parser.add_argument(
+        "-w",
+        "--whitelist",
+        type=str,
+        nargs="*",
+        help="whitelisted domain names (e.g., github.com)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"

@@ -1,7 +1,8 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Set
+from typing import List, Optional, Set
+from urllib.parse import urlparse
 
 import httpx
 from rich.console import Console
@@ -65,6 +66,7 @@ def check_paths(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    whitelist_domains: Optional[List[str]] = None,
 ):
     urls = []
     for path in paths:
@@ -81,7 +83,9 @@ def check_paths(
     # remove duplicate
     urls = set(urls)
     print(f"Found {len(urls)} unique HTTP URLs")
-    return check_urls(urls, timeout, max_connections, max_keepalive_connections)
+    return check_urls(
+        urls, timeout, max_connections, max_keepalive_connections, whitelist_domains
+    )
 
 
 def check_urls(
@@ -89,7 +93,22 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    whitelist_domains: Optional[List[str]] = None,
 ):
+    if whitelist_domains is None:
+        whitelist_domains = []
+
+    # filter out the whitelisted urls
+    whitelisted_urls = set()
+    filtered_urls = set()
+    for url in urls:
+        parsed_uri = urlparse(url)
+        if parsed_uri.netloc in whitelist_domains:
+            whitelisted_urls.add(url)
+        else:
+            filtered_urls.add(url)
+    urls = filtered_urls
+
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
@@ -126,6 +145,10 @@ def check_urls(
     if num_ok > 0:
         print()
         console.print(f"OK ({num_ok})", style="green")
+
+    if len(whitelisted_urls) > 0:
+        print()
+        console.print(f"Whitelisted ({len(whitelisted_urls)})", style="white")
 
     if len(redirects) > 0:
         print()
