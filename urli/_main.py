@@ -1,6 +1,5 @@
 import asyncio
 import re
-import sys
 from pathlib import Path
 from typing import Optional, Set
 
@@ -71,6 +70,11 @@ def check_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
+
     urls = []
     for path in paths:
         path = Path(path)
@@ -85,10 +89,12 @@ def check_paths(
 
     # remove duplicate
     urls = set(urls)
-    print(f"Found {len(urls)} unique HTTP URLs")
-    d = check_urls(
-        urls, timeout, max_connections, max_keepalive_connections, allow_set, ignore_set
-    )
+    # remove ignored
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
+
     print_to_screen(d)
     has_errors = any(
         len(d[key]) > 0
@@ -105,6 +111,11 @@ def fix_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
+
     urls = []
     for path in paths:
         path = Path(path)
@@ -119,10 +130,11 @@ def fix_paths(
 
     # remove duplicate
     urls = set(urls)
-    print(f"Found {len(urls)} unique HTTP URLs")
-    d = check_urls(
-        urls, timeout, max_connections, max_keepalive_connections, allow_set, ignore_set
-    )
+    # remove ignored
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
 
     # only consider redirects
     redirects = d["Redirects"]
@@ -132,33 +144,32 @@ def fix_paths(
 
     print_to_screen({"Redirects": redirects})
     print()
-    print("Fix those redirects? [y/N] ", end="")
+    print("Replace those redirects? [y/N] ", end="")
     choice = input().lower()
     if choice not in ["y", "yes"]:
         print("Abort.")
         return 1
+
+    def _replace_in_file(p):
+        # Read, replace, write
+        try:
+            with open(p) as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            return
+        for r in redirects:
+            content = content.replace(r[0], r[2])
+        with open(p, "w") as f:
+            f.write(content)
 
     for path in paths:
         path = Path(path)
         if path.is_dir():
             for p in path.rglob("*"):
                 if p.is_file():
-                    # Read, replace, write
-                    with open(p) as f:
-                        content = f.read()
-                    for r in redirects:
-                        content = content.replace(r[0], r[2])
-                    with open(p, "w") as f:
-                        f.write(content)
-
+                    _replace_in_file(p)
         elif path.is_file():
-            # Read, replace, write
-            with open(path) as f:
-                content = f.read()
-            for r in redirects:
-                content = content.replace(r[0], r[2])
-            with open(path, "w") as f:
-                f.write(content)
+            _replace_in_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
 
@@ -207,24 +218,14 @@ def check_urls(
     urls: Set[str],
     timeout: float = 10.0,
     max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
+    max_keepalive_connections: int = 10
 ):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
     # sort results into dictionary
     d = {
         "OK": [],
-        "Ignored": ignored_urls,
         "Redirects": [],
         "Client errors": [],
         "Server errors": [],
