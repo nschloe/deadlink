@@ -4,7 +4,9 @@ from pathlib import Path
 from typing import List, Optional, Set
 from urllib.parse import urlparse
 
+import appdirs
 import httpx
+import toml
 from rich.console import Console
 from rich.progress import track
 
@@ -93,10 +95,20 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    whitelist_domains: Optional[List[str]] = None,
+    whitelist_domains: Optional[Set[str]] = None,
 ):
     if whitelist_domains is None:
-        whitelist_domains = []
+        whitelist_domains = set()
+
+    # check if there is a config file with more whitelisted domains
+    config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
+    try:
+        with open(config_file) as f:
+            out = toml.load(f)
+    except FileNotFoundError:
+        pass
+    else:
+        whitelist_domains = whitelist_domains.union(set(out["whitelist"]))
 
     # filter out the whitelisted urls
     whitelisted_urls = set()
