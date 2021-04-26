@@ -142,6 +142,6 @@ def check_urls(
                 if status_code < 900:
                     console.print(f"  {status_code}: {url}", style="red")
                 else:
-                    console.print(f"       {url}", style="red")
+                    console.print(f"  {url}", style="red")
 
     return any(len(err) > 0 for err in errors.values())
