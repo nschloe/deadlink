@@ -2,6 +2,7 @@ import asyncio
 import re
 from pathlib import Path
 from typing import Optional, Set
+from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
 import httpx
@@ -39,9 +40,39 @@ async def _get_return_code(url: str, client, timeout: float):
         httpx.PoolTimeout,
     ):
         return url, 999, None
+
+    if "Location" in r.headers:
+        loc = r.headers["Location"]
+        url_split = urlsplit(url)
+
+        # create loc split that can be overridden
+        loc_split = urlsplit(loc)
+        loc_split = [
+            loc_split.scheme,
+            loc_split.netloc,
+            loc_split.path,
+            loc_split.query,
+            loc_split.fragment,
+        ]
+
+        # handle relative redirects
+        if loc_split[0] == "":
+            loc_split[0] = url_split.scheme
+        if loc_split[1] == "":
+            loc_split[1] = url_split.netloc
+
+        # The URL fragment, if (the part after a #-sign, if there is one) is not
+        # contained in the redirect location because it's not sent to the server in the
+        # first place.  Append it manually.
+        if url_split.fragment != "" and loc_split[4] == "":
+            loc_split[4] = url_split.fragment
+
+        loc = urlunsplit(loc_split)
+
     else:
-        loc = r.headers["Location"] if "Location" in r.headers else None
-        return url, r.status_code, loc
+        loc = None
+
+    return url, r.status_code, loc
 
 
 async def _get_all_return_codes(
