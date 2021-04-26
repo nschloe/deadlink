@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/nschloe/urli"><img alt="urli" src="https://nschloe.github.io/urli/logo-with-text.svg" width="60%"></a>
+  <a href="https://github.com/nschloe/urli"><img alt="urli" src="https://nschloe.github.io/urli/logo.svg" width="60%"></a>
   <p align="center">The urli bird catches the worm.</p>
 </p>
 
