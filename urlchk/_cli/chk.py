@@ -1,11 +1,11 @@
 import argparse
 import sys
 
-from .__about__ import __version__
-from ._main import check_paths
+from ..__about__ import __version__
+from .._main import check_paths
 
 
-def main(argv=None):
+def chk(argv=None):
     # Parse command line arguments.
     parser = _get_parser()
     args = parser.parse_args(argv)
