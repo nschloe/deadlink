@@ -70,27 +70,7 @@ def check_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
-    urls = []
-    for path in paths:
-        path = Path(path)
-        if path.is_dir():
-            for p in path.rglob("*"):
-                if p.is_file():
-                    urls += _get_urls_from_file(p)
-        elif path.is_file():
-            urls += _get_urls_from_file(path)
-        else:
-            raise ValueError(f"Could not find path {path}")
-
-    # remove duplicate
-    urls = set(urls)
-    # remove ignored
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
+    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
 
     print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
     d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
@@ -103,14 +83,7 @@ def check_paths(
     return has_errors
 
 
-def fix_paths(
-    paths,
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
-):
+def _find_urls(paths, allow_set, ignore_set):
     if allow_set is None:
         allow_set = set()
     if ignore_set is None:
@@ -127,11 +100,21 @@ def fix_paths(
             urls += _get_urls_from_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
-
-    # remove duplicate
     urls = set(urls)
-    # remove ignored
+
     urls, ignored_urls = _filter(urls, allow_set, ignore_set)
+    return urls, ignored_urls
+
+
+def fix_paths(
+    paths,
+    timeout: float = 10.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 10,
+    allow_set: Optional[Set[str]] = None,
+    ignore_set: Optional[Set[str]] = None,
+):
+    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
 
     print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
     d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
