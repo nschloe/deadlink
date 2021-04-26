@@ -1,7 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Optional, Set
 from urllib.parse import urlparse
 
 import appdirs
@@ -68,7 +68,7 @@ def check_paths(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    whitelist_domains: Optional[List[str]] = None,
+    ignore_domains: Optional[Set[str]] = None,
 ):
     urls = []
     for path in paths:
@@ -86,7 +86,7 @@ def check_paths(
     urls = set(urls)
     print(f"Found {len(urls)} unique HTTP URLs")
     return check_urls(
-        urls, timeout, max_connections, max_keepalive_connections, whitelist_domains
+        urls, timeout, max_connections, max_keepalive_connections, ignore_domains
     )
 
 
@@ -95,12 +95,12 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    whitelist_domains: Optional[Set[str]] = None,
+    ignore_domains: Optional[Set[str]] = None,
 ):
-    if whitelist_domains is None:
-        whitelist_domains = set()
+    if ignore_domains is None:
+        ignore_domains = set()
 
-    # check if there is a config file with more whitelisted domains
+    # check if there is a config file with more ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
     try:
         with open(config_file) as f:
@@ -108,15 +108,15 @@ def check_urls(
     except FileNotFoundError:
         pass
     else:
-        whitelist_domains = whitelist_domains.union(set(out["whitelist"]))
+        ignore_domains = ignore_domains.union(set(out["ignore"]))
 
-    # filter out the whitelisted urls
-    whitelisted_urls = set()
+    # filter out the ignored urls
+    ignored_urls = set()
     filtered_urls = set()
     for url in urls:
         parsed_uri = urlparse(url)
-        if parsed_uri.netloc in whitelist_domains:
-            whitelisted_urls.add(url)
+        if parsed_uri.netloc in ignore_domains:
+            ignored_urls.add(url)
         else:
             filtered_urls.add(url)
     urls = filtered_urls
@@ -158,9 +158,9 @@ def check_urls(
         print()
         console.print(f"OK ({num_ok})", style="green")
 
-    if len(whitelisted_urls) > 0:
+    if len(ignored_urls) > 0:
         print()
-        console.print(f"Whitelisted ({len(whitelisted_urls)})", style="white")
+        console.print(f"Ignored ({len(ignored_urls)})", style="white")
 
     if len(redirects) > 0:
         print()

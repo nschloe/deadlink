@@ -15,7 +15,7 @@ def main(argv=None):
         args.timeout,
         args.max_connections,
         args.max_keepalive_connections,
-        None if args.whitelist is None else set(args.whitelist),
+        None if args.ignore is None else set(args.ignore),
     )
     return 1 if has_errors else 0
 
@@ -49,11 +49,11 @@ def _get_parser():
         help="number of allowable keep-alive connections (default: 10)",
     )
     parser.add_argument(
-        "-w",
-        "--whitelist",
+        "-i",
+        "--ignore",
         type=str,
         nargs="+",
-        help="whitelisted domain names (e.g., github.com)",
+        help="ignored domain names (e.g., github.com)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
