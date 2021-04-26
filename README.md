@@ -19,7 +19,7 @@ pip install urli
 ```
 and use as
 ```sh
-urli README.md   # or multiple files/directories
+urli-check README.md   # or multiple files/directories
 ```
 To explicitly allow or ignore certain URLs, use
 ```
@@ -41,9 +41,13 @@ ignore = [
 ```
 See
 ```
-urli -h
+urli-check -h
 ```
-for all options.
+for all options. Use
+```
+urli-fix path-or-file
+```
+to replace redirects in ann files. The same filters as for `urli-check` apply.
 
 Example output:
 
