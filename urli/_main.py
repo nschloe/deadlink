@@ -218,7 +218,7 @@ def check_urls(
     urls: Set[str],
     timeout: float = 10.0,
     max_connections: int = 100,
-    max_keepalive_connections: int = 10
+    max_keepalive_connections: int = 10,
 ):
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
