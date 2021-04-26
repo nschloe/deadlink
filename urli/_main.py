@@ -2,6 +2,7 @@ import asyncio
 import re
 from pathlib import Path
 from typing import Optional, Set
+from urllib.parse import urlparse
 
 import appdirs
 import httpx
@@ -39,9 +40,15 @@ async def _get_return_code(url: str, client, timeout: float):
         httpx.PoolTimeout,
     ):
         return url, 999, None
-    else:
-        loc = r.headers["Location"] if "Location" in r.headers else None
-        return url, r.status_code, loc
+
+    loc = r.headers["Location"] if "Location" in r.headers else None
+    # The URL fragment, if (the part after a #-sign, if there is one) is not contained
+    # in the redirect location because it's not sent to the server in the first place.
+    # Append it manually.
+    url_parsed = urlparse(url)
+    if len(url_parsed.fragment) > 0:
+        loc += "#" + url_parsed.fragment
+    return url, r.status_code, loc
 
 
 async def _get_all_return_codes(
