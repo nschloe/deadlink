@@ -2,7 +2,6 @@ import asyncio
 import re
 from pathlib import Path
 from typing import Optional, Set
-from urllib.parse import urlparse
 
 import appdirs
 import httpx
@@ -68,7 +67,8 @@ def check_paths(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    ignore_domains: Optional[Set[str]] = None,
+    allow_set: Optional[Set[str]] = None,
+    ignore_set: Optional[Set[str]] = None,
 ):
     urls = []
     for path in paths:
@@ -86,7 +86,7 @@ def check_paths(
     urls = set(urls)
     print(f"Found {len(urls)} unique HTTP URLs")
     d = check_urls(
-        urls, timeout, max_connections, max_keepalive_connections, ignore_domains
+        urls, timeout, max_connections, max_keepalive_connections, allow_set, ignore_set
     )
     print_to_screen(d)
     has_errors = any(
@@ -96,8 +96,8 @@ def check_paths(
     return has_errors
 
 
-def _filter_ignored(urls, ignore_domains):
-    # check if there is a config file with more ignored domains
+def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
+    # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
     try:
         with open(config_file) as f:
@@ -105,19 +105,35 @@ def _filter_ignored(urls, ignore_domains):
     except FileNotFoundError:
         pass
     else:
-        ignore_domains = ignore_domains.union(set(out["ignore"]))
+        if "allow" in out:
+            allow_set = allow_set.union(set(out["allow"]))
+        if "ignore" in out:
+            ignore_set = ignore_set.union(set(out["ignore"]))
 
-    # filter out the ignored urls
+    # filter out non-allowed and ignored urls
+    allowed_urls = set()
     ignored_urls = set()
-    filtered_urls = set()
     for url in urls:
-        parsed_uri = urlparse(url)
-        if parsed_uri.netloc in ignore_domains:
-            ignored_urls.add(url)
+        is_allowed = True
+
+        if is_allowed:
+            for a in allow_set:
+                if re.search(a, url) is None:
+                    is_allowed = False
+                    break
+
+        if is_allowed:
+            for i in ignore_set:
+                if re.search(i, url) is not None:
+                    is_allowed = False
+                    break
+
+        if is_allowed:
+            allowed_urls.add(url)
         else:
-            filtered_urls.add(url)
-    urls = filtered_urls
-    return urls, ignored_urls
+            ignored_urls.add(url)
+
+    return allowed_urls, ignored_urls
 
 
 def check_urls(
@@ -125,12 +141,15 @@ def check_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    ignore_domains: Optional[Set[str]] = None,
+    allow_set: Optional[Set[str]] = None,
+    ignore_set: Optional[Set[str]] = None,
 ):
-    if ignore_domains is None:
-        ignore_domains = set()
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
 
-    urls, ignored_urls = _filter_ignored(urls, ignore_domains)
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
 
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)

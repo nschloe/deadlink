@@ -21,15 +21,22 @@ and use as
 ```sh
 urlchk README.md   # or multiple files/directories
 ```
-With
+To explicitly allow or ignore certain URLs, use
 ```
-urlchk README.md -i stackoverflow.com github.com
+urlchk README.md -a http: -i stackoverflow.com github
 ```
-you can ignore domains. You can also place ignored domains in the config file
+This only considers URLs containing `http:` and _not_ containing `stackoverflow.com` or
+`github`. You can also place allow and ignore lists in the config file
 `~/.config/urlchk/config.toml`, e.g.,
 ```toml
+allow = [
+  "https:"
+]
 ignore = [
   "stackoverflow.com",
+  "math.stackexchange.com",
+  "discord.gg",
+  "doi.org"
 ]
 ```
 See
