@@ -2,7 +2,6 @@ import asyncio
 import re
 from pathlib import Path
 from typing import Optional, Set
-from urllib.parse import urlparse
 
 import appdirs
 import httpx
@@ -96,7 +95,7 @@ def check_paths(
     return has_errors
 
 
-def _filter_ignored(urls, ignore_domains):
+def _filter_ignored(urls, ignore_set: Set[str]):
     # check if there is a config file with more ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urlchk" / "config.toml"
     try:
@@ -105,17 +104,22 @@ def _filter_ignored(urls, ignore_domains):
     except FileNotFoundError:
         pass
     else:
-        ignore_domains = ignore_domains.union(set(out["ignore"]))
+        ignore_set = ignore_set.union(set(out["ignore"]))
 
     # filter out the ignored urls
     ignored_urls = set()
     filtered_urls = set()
     for url in urls:
-        parsed_uri = urlparse(url)
-        if parsed_uri.netloc in ignore_domains:
-            ignored_urls.add(url)
-        else:
+        is_ignored = False
+        for i in ignore_set:
+            m = re.search(i, url)
+            if m is not None:
+                ignored_urls.add(url)
+                is_ignored = True
+                break
+        if not is_ignored:
             filtered_urls.add(url)
+
     urls = filtered_urls
     return urls, ignored_urls
 

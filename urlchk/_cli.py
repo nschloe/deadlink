@@ -53,7 +53,7 @@ def _get_parser():
         "--ignore",
         type=str,
         nargs="+",
-        help="ignored domain names (e.g., github.com)",
+        help="ignore urls containing these strings (e.g., github.com)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
