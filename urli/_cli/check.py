@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from ..__about__ import __version__
-from .._main import _filter, _find_urls, check_urls, print_to_screen
+from .._main import _filter, _find_urls, categorize_urls, print_to_screen
 
 
 def check(argv=None):
@@ -18,7 +18,7 @@ def check(argv=None):
     )
 
     print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
-    d = check_urls(
+    d = categorize_urls(
         urls, args.timeout, args.max_connections, args.max_keepalive_connections
     )
 

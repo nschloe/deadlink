@@ -212,7 +212,7 @@ def _filter(urls, allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]])
     return allowed_urls, ignored_urls
 
 
-def check_urls(
+def categorize_urls(
     urls: Set[str],
     timeout: float = 10.0,
     max_connections: int = 100,
