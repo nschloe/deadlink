@@ -2,10 +2,10 @@ import urli
 
 
 def test_check():
-    out = urli.check_urls({"https://www.google.com"})
+    out = urli.check_urls({"https://httpstat.us/200"})
     assert len(out["OK"]) == 1
 
-    out = urli.check_urls({"https://github.com/nschloe/urli/void"})
+    out = urli.check_urls({"https://httpstat.us/404"})
     assert len(out["Client errors"]) == 1
 
     # "other errors"
@@ -13,7 +13,7 @@ def test_check():
     assert len(out["Other errors"]) == 1
 
     # redirect
-    out = urli.check_urls({"https://pypi.org/pypi/pygalmesh/"})
+    out = urli.check_urls({"https://httpstat.us/302"})
     assert len(out["Redirects"]) == 1
 
 
