@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from ..__about__ import __version__
-from .._main import _filter, _find_urls, categorize_urls, print_to_screen
+from .._main import categorize_urls, filter_urls, find_urls, print_to_screen
 
 
 def check(argv=None):
@@ -10,8 +10,8 @@ def check(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    urls = _find_urls(args.paths)
-    urls, ignored_urls = _filter(
+    urls = find_urls(args.paths)
+    urls, ignored_urls = filter_urls(
         urls,
         None if args.allow is None else set(args.allow),
         None if args.ignore is None else set(args.ignore),

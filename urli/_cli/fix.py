@@ -4,11 +4,11 @@ from pathlib import Path
 
 from ..__about__ import __version__
 from .._main import (
-    _filter,
-    _find_urls,
-    _replace_in_file,
     categorize_urls,
+    filter_urls,
+    find_urls,
     print_to_screen,
+    replace_in_file,
 )
 
 
@@ -17,8 +17,8 @@ def fix(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    urls = _find_urls(args.paths)
-    urls, ignored_urls = _filter(
+    urls = find_urls(args.paths)
+    urls, ignored_urls = filter_urls(
         urls,
         None if args.allow is None else set(args.allow),
         None if args.ignore is None else set(args.ignore),
@@ -48,9 +48,9 @@ def fix(argv=None):
         if path.is_dir():
             for p in path.rglob("*"):
                 if p.is_file():
-                    _replace_in_file(p, redirects)
+                    replace_in_file(p, redirects)
         elif path.is_file():
-            _replace_in_file(path, redirects)
+            replace_in_file(path, redirects)
         else:
             raise ValueError(f"Could not find path {path}")
 

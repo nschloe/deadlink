@@ -76,7 +76,7 @@ async def _get_return_code(url: str, client, timeout: float):
 
 
 async def _get_all_return_codes(
-    urls, timeout, max_connections, max_keepalive_connections
+    urls, timeout: float, max_connections: int, max_keepalive_connections: int
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
@@ -93,7 +93,7 @@ async def _get_all_return_codes(
     return ret
 
 
-def _find_urls(paths):
+def find_urls(paths):
     urls = []
     for path in paths:
         path = Path(path)
@@ -108,7 +108,7 @@ def _find_urls(paths):
     return set(urls)
 
 
-def _replace_in_file(p, redirects):
+def replace_in_file(p, redirects):
     # read
     try:
         with open(p) as f:
@@ -117,6 +117,7 @@ def _replace_in_file(p, redirects):
         return
     # replace
     is_changed = False
+    # TODO be more careful here
     for r in redirects:
         if not is_changed and r[0] in content:
             is_changed = True
@@ -127,7 +128,9 @@ def _replace_in_file(p, redirects):
             f.write(content)
 
 
-def _filter(urls, allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]):
+def filter_urls(
+    urls: Set[str], allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]
+):
     if allow_set is None:
         allow_set = set()
     if ignore_set is None:
