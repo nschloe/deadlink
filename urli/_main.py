@@ -127,46 +127,6 @@ def _replace_in_file(p, redirects):
             f.write(content)
 
 
-def fix_paths(
-    paths,
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
-):
-    urls = _find_urls(paths)
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-
-    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
-    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
-
-    # only consider redirects
-    redirects = d["Redirects"]
-    if len(redirects) == 0:
-        print("No redirects found.")
-        return 0
-
-    print_to_screen({"Redirects": redirects})
-    print()
-    print("Replace those redirects? [y/N] ", end="")
-    choice = input().lower()
-    if choice not in ["y", "yes"]:
-        print("Abort.")
-        return 1
-
-    for path in paths:
-        path = Path(path)
-        if path.is_dir():
-            for p in path.rglob("*"):
-                if p.is_file():
-                    _replace_in_file(p, redirects)
-        elif path.is_file():
-            _replace_in_file(path, redirects)
-        else:
-            raise ValueError(f"Could not find path {path}")
-
-
 def _filter(urls, allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]):
     if allow_set is None:
         allow_set = set()

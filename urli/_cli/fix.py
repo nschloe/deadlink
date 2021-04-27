@@ -1,8 +1,15 @@
 import argparse
 import sys
+from pathlib import Path
 
 from ..__about__ import __version__
-from .._main import fix_paths
+from .._main import (
+    _filter,
+    _find_urls,
+    _replace_in_file,
+    categorize_urls,
+    print_to_screen,
+)
 
 
 def fix(argv=None):
@@ -10,15 +17,44 @@ def fix(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = fix_paths(
-        args.paths,
-        args.timeout,
-        args.max_connections,
-        args.max_keepalive_connections,
+    urls = _find_urls(args.paths)
+    urls, ignored_urls = _filter(
+        urls,
         None if args.allow is None else set(args.allow),
         None if args.ignore is None else set(args.ignore),
     )
-    return 1 if has_errors else 0
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = categorize_urls(
+        urls, args.timeout, args.max_connections, args.max_keepalive_connections
+    )
+
+    # only consider redirects
+    redirects = d["Redirects"]
+    if len(redirects) == 0:
+        print("No redirects found.")
+        return 0
+
+    print_to_screen({"Redirects": redirects})
+    print()
+    print("Replace those redirects? [y/N] ", end="")
+    choice = input().lower()
+    if choice not in ["y", "yes"]:
+        print("Abort.")
+        return 1
+
+    for path in args.paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    _replace_in_file(p, redirects)
+        elif path.is_file():
+            _replace_in_file(path, redirects)
+        else:
+            raise ValueError(f"Could not find path {path}")
+
+    return 0
 
 
 def _get_parser():
