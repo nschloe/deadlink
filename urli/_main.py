@@ -101,7 +101,8 @@ def check_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
-    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
+    urls = _find_urls(paths)
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
 
     print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
     d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
@@ -114,12 +115,7 @@ def check_paths(
     return has_errors
 
 
-def _find_urls(paths, allow_set, ignore_set):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
+def _find_urls(paths):
     urls = []
     for path in paths:
         path = Path(path)
@@ -131,10 +127,26 @@ def _find_urls(paths, allow_set, ignore_set):
             urls += _get_urls_from_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
-    urls = set(urls)
+    return set(urls)
 
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-    return urls, ignored_urls
+
+def _replace_in_file(p, redirects):
+    # read
+    try:
+        with open(p) as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        return
+    # replace
+    is_changed = False
+    for r in redirects:
+        if not is_changed and r[0] in content:
+            is_changed = True
+        content = content.replace(r[0], r[2])
+    # rewrite
+    if is_changed:
+        with open(p, "w") as f:
+            f.write(content)
 
 
 def fix_paths(
@@ -145,7 +157,8 @@ def fix_paths(
     allow_set: Optional[Set[str]] = None,
     ignore_set: Optional[Set[str]] = None,
 ):
-    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
+    urls = _find_urls(paths)
+    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
 
     print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
     d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
@@ -164,39 +177,24 @@ def fix_paths(
         print("Abort.")
         return 1
 
-    def _replace_in_file(p):
-        # read
-        try:
-            with open(p) as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            return
-
-        # replace
-        is_changed = False
-        for r in redirects:
-            if not is_changed and r[0] in content:
-                is_changed = True
-            content = content.replace(r[0], r[2])
-
-        # rewrite
-        if is_changed:
-            with open(p, "w") as f:
-                f.write(content)
-
     for path in paths:
         path = Path(path)
         if path.is_dir():
             for p in path.rglob("*"):
                 if p.is_file():
-                    _replace_in_file(p)
+                    _replace_in_file(p, redirects)
         elif path.is_file():
-            _replace_in_file(path)
+            _replace_in_file(path, redirects)
         else:
             raise ValueError(f"Could not find path {path}")
 
 
-def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
+def _filter(urls, allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]):
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
+
     # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urli" / "config.toml"
     try:
