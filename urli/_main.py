@@ -12,7 +12,7 @@ from rich.progress import track
 
 # https://regexr.com/3e6m0
 # make all groups non-capturing with ?:
-pattern = re.compile(
+url_regex = re.compile(
     r"http(?:s)?:\/\/.(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&/=]*)"
 )
 
@@ -23,7 +23,7 @@ def _get_urls_from_file(path):
             content = f.read()
     except UnicodeDecodeError:
         return []
-    return pattern.findall(content)
+    return url_regex.findall(content)
 
 
 async def _get_return_code(url: str, client, timeout: float):
@@ -91,28 +91,6 @@ async def _get_all_return_codes(
         ):
             ret.append(await task)
     return ret
-
-
-def check_paths(
-    paths,
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
-):
-    urls = _find_urls(paths)
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-
-    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
-    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
-
-    print_to_screen(d)
-    has_errors = any(
-        len(d[key]) > 0
-        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
-    )
-    return has_errors
 
 
 def _find_urls(paths):
