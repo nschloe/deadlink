@@ -5,6 +5,6 @@ except ImportError:
     import importlib_metadata as metadata
 
 try:
-    __version__ = metadata.version("urli")
+    __version__ = metadata.version("wurl")
 except Exception:
     __version__ = "unknown"

@@ -152,7 +152,7 @@ def filter_urls(
         ignore_set = set()
 
     # check if there is a config file with more allowed/ignored domains
-    config_file = Path(appdirs.user_config_dir()) / "urli" / "config.toml"
+    config_file = Path(appdirs.user_config_dir()) / "wurl" / "config.toml"
     try:
         with open(config_file) as f:
             out = toml.load(f)
