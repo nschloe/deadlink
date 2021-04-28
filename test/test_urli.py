@@ -1,5 +1,3 @@
-import tempfile
-
 import urli
 
 
