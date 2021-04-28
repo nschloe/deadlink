@@ -1,8 +1,15 @@
 import argparse
 import sys
+from pathlib import Path
 
 from ..__about__ import __version__
-from .._main import fix_paths
+from .._main import (
+    categorize_urls,
+    filter_urls,
+    find_urls,
+    print_to_screen,
+    replace_in_file,
+)
 
 
 def fix(argv=None):
@@ -10,15 +17,51 @@ def fix(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    has_errors = fix_paths(
-        args.paths,
-        args.timeout,
-        args.max_connections,
-        args.max_keepalive_connections,
+    urls = find_urls(args.paths)
+    urls, ignored_urls = filter_urls(
+        urls,
         None if args.allow is None else set(args.allow),
         None if args.ignore is None else set(args.ignore),
     )
-    return 1 if has_errors else 0
+
+    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    d = categorize_urls(
+        urls, args.timeout, args.max_connections, args.max_keepalive_connections
+    )
+
+    # only consider redirects
+    redirects = d["Redirects"]
+
+    if len(redirects) == 0:
+        print("No redirects found.")
+        return 0
+
+    print_to_screen({"Redirects": redirects})
+    print()
+    print("Replace those redirects? [y/N] ", end="")
+    if args.yes:
+        print("Auto yes.")
+    else:
+        choice = input().lower()
+        if choice not in ["y", "yes"]:
+            print("Abort.")
+            return 1
+
+    # create a dictionary from redirects
+    replace = dict([(r[0], r[2]) for r in redirects])
+
+    for path in args.paths:
+        path = Path(path)
+        if path.is_dir():
+            for p in path.rglob("*"):
+                if p.is_file():
+                    replace_in_file(p, replace)
+        elif path.is_file():
+            replace_in_file(path, replace)
+        else:
+            raise ValueError(f"Could not find path {path}")
+
+    return 0
 
 
 def _get_parser():
@@ -62,6 +105,13 @@ def _get_parser():
         type=str,
         nargs="+",
         help="only consider URLs containing these strings (e.g., http:)",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        default=False,
+        action="store_true",
+        help="automatic yes to prompt; useful for non-interactive runs (default: false)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"

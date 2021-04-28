@@ -1,7 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -12,7 +12,7 @@ from rich.progress import track
 
 # https://regexr.com/3e6m0
 # make all groups non-capturing with ?:
-pattern = re.compile(
+url_regex = re.compile(
     r"http(?:s)?:\/\/.(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&/=]*)"
 )
 
@@ -23,7 +23,7 @@ def _get_urls_from_file(path):
             content = f.read()
     except UnicodeDecodeError:
         return []
-    return pattern.findall(content)
+    return url_regex.findall(content)
 
 
 async def _get_return_code(url: str, client, timeout: float):
@@ -76,7 +76,7 @@ async def _get_return_code(url: str, client, timeout: float):
 
 
 async def _get_all_return_codes(
-    urls, timeout, max_connections, max_keepalive_connections
+    urls, timeout: float, max_connections: int, max_keepalive_connections: int
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
@@ -93,33 +93,7 @@ async def _get_all_return_codes(
     return ret
 
 
-def check_paths(
-    paths,
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
-):
-    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
-
-    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
-    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
-
-    print_to_screen(d)
-    has_errors = any(
-        len(d[key]) > 0
-        for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]
-    )
-    return has_errors
-
-
-def _find_urls(paths, allow_set, ignore_set):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
+def find_urls(paths):
     urls = []
     for path in paths:
         path = Path(path)
@@ -131,72 +105,52 @@ def _find_urls(paths, allow_set, ignore_set):
             urls += _get_urls_from_file(path)
         else:
             raise ValueError(f"Could not find path {path}")
-    urls = set(urls)
-
-    urls, ignored_urls = _filter(urls, allow_set, ignore_set)
-    return urls, ignored_urls
+    return set(urls)
 
 
-def fix_paths(
-    paths,
-    timeout: float = 10.0,
-    max_connections: int = 100,
-    max_keepalive_connections: int = 10,
-    allow_set: Optional[Set[str]] = None,
-    ignore_set: Optional[Set[str]] = None,
+def replace_in_string(content: str, replacements: Dict[str, str]):
+    # register where to replace what
+    repl = [
+        (m.span(0), replacements[m.group(0)])
+        for m in url_regex.finditer(content)
+        if m.group(0) in replacements
+    ]
+
+    k0 = 0
+    out = []
+    for k in range(len(repl)):
+        span, string = repl[k]
+        out.append(content[k0 : span[0]])
+        out.append(string)
+        k0 = span[1]
+    # and the rest
+    out.append(content[k0:])
+    return "".join(out)
+
+
+def replace_in_file(p, redirects: Dict[str, str]):
+    # read
+    try:
+        with open(p) as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        return
+    # replace
+    new_content = replace_in_string(content, redirects)
+    # rewrite
+    if new_content != content:
+        with open(p, "w") as f:
+            f.write(new_content)
+
+
+def filter_urls(
+    urls: Set[str], allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]
 ):
-    urls, ignored_urls = _find_urls(paths, allow_set, ignore_set)
+    if allow_set is None:
+        allow_set = set()
+    if ignore_set is None:
+        ignore_set = set()
 
-    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
-    d = check_urls(urls, timeout, max_connections, max_keepalive_connections)
-
-    # only consider redirects
-    redirects = d["Redirects"]
-    if len(redirects) == 0:
-        print("No redirects found.")
-        return 0
-
-    print_to_screen({"Redirects": redirects})
-    print()
-    print("Replace those redirects? [y/N] ", end="")
-    choice = input().lower()
-    if choice not in ["y", "yes"]:
-        print("Abort.")
-        return 1
-
-    def _replace_in_file(p):
-        # read
-        try:
-            with open(p) as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            return
-
-        # replace
-        is_changed = False
-        for r in redirects:
-            if not is_changed and r[0] in content:
-                is_changed = True
-            content = content.replace(r[0], r[2])
-
-        # rewrite
-        if is_changed:
-            with open(p, "w") as f:
-                f.write(content)
-
-    for path in paths:
-        path = Path(path)
-        if path.is_dir():
-            for p in path.rglob("*"):
-                if p.is_file():
-                    _replace_in_file(p)
-        elif path.is_file():
-            _replace_in_file(path)
-        else:
-            raise ValueError(f"Could not find path {path}")
-
-
-def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
     # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "urli" / "config.toml"
     try:
@@ -236,7 +190,7 @@ def _filter(urls, allow_set: Set[str], ignore_set: Set[str]):
     return allowed_urls, ignored_urls
 
 
-def check_urls(
+def categorize_urls(
     urls: Set[str],
     timeout: float = 10.0,
     max_connections: int = 100,
