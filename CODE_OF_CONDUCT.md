@@ -1,4 +1,4 @@
-# urli Code of Conduct
+# wurl Code of Conduct
 
 ## Our Pledge
 
