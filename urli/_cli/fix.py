@@ -31,7 +31,6 @@ def fix(argv=None):
 
     # only consider redirects
     redirects = d["Redirects"]
-    # TODO make a dictionary from them
 
     if len(redirects) == 0:
         print("No redirects found.")
@@ -48,14 +47,17 @@ def fix(argv=None):
             print("Abort.")
             return 1
 
+    # create a dictionary from redirects
+    replace = dict([(r[0], r[2]) for r in redirects])
+
     for path in args.paths:
         path = Path(path)
         if path.is_dir():
             for p in path.rglob("*"):
                 if p.is_file():
-                    replace_in_file(p, redirects)
+                    replace_in_file(p, replace)
         elif path.is_file():
-            replace_in_file(path, redirects)
+            replace_in_file(path, replace)
         else:
             raise ValueError(f"Could not find path {path}")
 

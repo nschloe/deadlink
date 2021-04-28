@@ -28,7 +28,7 @@ def test_replace():
 
 def test_fix_cli():
     content = "some text\n" + "https://httpstat.us/302\n" + "more text"
-    ref = "some text\n" + "https://httpstat.us/\n" + "more text"
+    ref = "some text\n" + "https://httpstat.us\n" + "more text"
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)

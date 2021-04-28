@@ -140,7 +140,7 @@ def replace_in_file(p, redirects: Dict[str, str]):
     # rewrite
     if new_content != content:
         with open(p, "w") as f:
-            f.write(content)
+            f.write(new_content)
 
 
 def filter_urls(
