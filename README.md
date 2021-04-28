@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/nschloe/wurl"><img alt="wurl" src="https://nschloe.github.io/wurl/logo.svg" width="60%"></a>
-  <p align="center">The wurl bird catches the worm.</p>
+  <p align="center">The wurly bird catches the worm.</p>
 </p>
 
 [![PyPi Version](https://img.shields.io/pypi/v/wurl.svg?style=flat-square)](https://pypi.org/project/wurl/)
@@ -52,11 +52,6 @@ to replace redirects in ann files. The same filters as for `wurl-check` apply.
 Example output:
 
 ![](https://nschloe.github.io/wurl/example-output-carbon.png)
-
-
-### Logo art
-
-Logo art by [b0red](https://pixabay.com/users/b0red-4473488/).
 
 
 ### License
