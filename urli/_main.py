@@ -1,7 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Optional, Set, Dict
+from typing import Dict, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -120,7 +120,7 @@ def replace_in_string(content: str, replacements: Dict[str, str]):
     out = []
     for k in range(len(repl)):
         span, string = repl[k]
-        out.append(content[k0: span[0]])
+        out.append(content[k0 : span[0]])
         out.append(string)
         k0 = span[1]
     # and the rest

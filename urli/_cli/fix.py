@@ -107,10 +107,9 @@ def _get_parser():
     parser.add_argument(
         "-y",
         "--yes",
-        type=bool,
         default=False,
         action="store_true",
-        help="automatic yes to prompt; useful for non-interactive runs (default: false)"
+        help="automatic yes to prompt; useful for non-interactive runs (default: false)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
