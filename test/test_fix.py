@@ -5,7 +5,8 @@ def test_replace():
     content = (
         "some text\n"
         + "http://example.com\n"
-        + "http://example.com/path"
+        + "http://example.com/path\n"
+        + "more text"
     )
     d = {
         "http://example.com/path": "http://example.com/path/more",
@@ -16,7 +17,8 @@ def test_replace():
     ref = (
         "some text\n"
         + "http://example.com/home\n"
-        + "http://example.com/path/more"
+        + "http://example.com/path/more\n"
+        + "more text"
     )
     print(content)
     print()

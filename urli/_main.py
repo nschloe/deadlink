@@ -109,10 +109,23 @@ def find_urls(paths):
 
 
 def replace_in_string(content: str, replacements: Dict[str, str]):
-    # TODO be more careful here
-    for orig, repl in replacements.items():
-        content = content.replace(orig, repl)
-    return content
+    # register where to replace what
+    repl = [
+        (m.span(0), replacements[m.group(0)])
+        for m in url_regex.finditer(content)
+        if m.group(0) in replacements
+    ]
+
+    k0 = 0
+    out = []
+    for k in range(len(repl)):
+        span, string = repl[k]
+        out.append(content[k0: span[0]])
+        out.append(string)
+        k0 = span[1]
+    # and the rest
+    out.append(content[k0:])
+    return "".join(out)
 
 
 def replace_in_file(p, redirects: Dict[str, str]):
