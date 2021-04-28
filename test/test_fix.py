@@ -20,9 +20,4 @@ def test_replace():
         + "http://example.com/path/more\n"
         + "more text"
     )
-    print(content)
-    print()
-    print(new_content)
     assert ref == new_content
-
-

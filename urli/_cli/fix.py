@@ -31,8 +31,7 @@ def fix(argv=None):
 
     # only consider redirects
     redirects = d["Redirects"]
-    # make a dictionary from them
-    exit(1)
+    # TODO make a dictionary from them
 
     if len(redirects) == 0:
         print("No redirects found.")
@@ -41,10 +40,13 @@ def fix(argv=None):
     print_to_screen({"Redirects": redirects})
     print()
     print("Replace those redirects? [y/N] ", end="")
-    choice = input().lower()
-    if choice not in ["y", "yes"]:
-        print("Abort.")
-        return 1
+    if args.yes:
+        print("Auto yes.")
+    else:
+        choice = input().lower()
+        if choice not in ["y", "yes"]:
+            print("Abort.")
+            return 1
 
     for path in args.paths:
         path = Path(path)
@@ -101,6 +103,14 @@ def _get_parser():
         type=str,
         nargs="+",
         help="only consider URLs containing these strings (e.g., http:)",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        type=bool,
+        default=False,
+        action="store_true",
+        help="automatic yes to prompt; useful for non-interactive runs (default: false)"
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
