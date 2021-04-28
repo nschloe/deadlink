@@ -1,7 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional, Set, Dict
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -108,7 +108,14 @@ def find_urls(paths):
     return set(urls)
 
 
-def replace_in_file(p, redirects):
+def replace_in_string(content: str, replacements: Dict[str, str]):
+    # TODO be more careful here
+    for orig, repl in replacements.items():
+        content = content.replace(orig, repl)
+    return content
+
+
+def replace_in_file(p, redirects: Dict[str, str]):
     # read
     try:
         with open(p) as f:
@@ -116,14 +123,9 @@ def replace_in_file(p, redirects):
     except UnicodeDecodeError:
         return
     # replace
-    is_changed = False
-    # TODO be more careful here
-    for r in redirects:
-        if not is_changed and r[0] in content:
-            is_changed = True
-        content = content.replace(r[0], r[2])
+    new_content = replace_in_string(content, redirects)
     # rewrite
-    if is_changed:
+    if new_content != content:
         with open(p, "w") as f:
             f.write(content)
 

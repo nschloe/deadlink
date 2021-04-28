@@ -31,6 +31,9 @@ def fix(argv=None):
 
     # only consider redirects
     redirects = d["Redirects"]
+    # make a dictionary from them
+    exit(1)
+
     if len(redirects) == 0:
         print("No redirects found.")
         return 0
