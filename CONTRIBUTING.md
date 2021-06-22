@@ -1,8 +1,8 @@
-# wurl contributing guidelines
+# deadlink contributing guidelines
 
-The wurl community appreciates your contributions via issues and
+The deadlink community appreciates your contributions via issues and
 pull requests.  Note that the [code of conduct](CODE_OF_CONDUCT.md)
-applies to all interactions with the wurl project, including
+applies to all interactions with the deadlink project, including
 issues and pull requests.
 
 When submitting pull requests, please follow the style guidelines of
