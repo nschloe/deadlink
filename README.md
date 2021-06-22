@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/nschloe/deadlink"><img alt="deadlink" src="https://nschloe.github.io/deadlink/logo.svg" width="60%"></a>
+  <a href="https://github.com/nschloe/deadlink"><img alt="deadlink" src="https://nschloe.github.io/deadlink/logo-with-text.svg" width="60%"></a>
 </p>
 
 [![PyPi Version](https://img.shields.io/pypi/v/deadlink.svg?style=flat-square)](https://pypi.org/project/deadlink/)
