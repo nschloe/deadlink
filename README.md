@@ -17,6 +17,8 @@ Parses text files for HTTP URLs and checks if they are still valid. Install with
 pip install deadlink
 ```
 and use as
+<!--TODO activate-->
+<!--pytest-codeblocks:skip-->
 ```sh
 deadlink-check README.md   # or multiple files/directories
 ```
