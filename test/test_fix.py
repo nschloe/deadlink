@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-import wurl
+import deadlink
 
 
 def test_replace():
@@ -15,7 +15,7 @@ def test_replace():
         "http://example.com/path": "http://example.com/path/more",
         "http://example.com": "http://example.com/home",
     }
-    new_content = wurl._main.replace_in_string(content, d)
+    new_content = deadlink._main.replace_in_string(content, d)
 
     ref = (
         "some text\n"
@@ -36,7 +36,7 @@ def test_fix_cli():
         with open(infile, "w") as f:
             f.write(content)
 
-        wurl._cli.fix([str(infile), "--yes"])
+        deadlink._cli.fix([str(infile), "--yes"])
 
         with open(infile) as f:
             out = f.read()
