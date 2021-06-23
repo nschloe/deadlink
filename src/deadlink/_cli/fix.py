@@ -29,14 +29,14 @@ def fix(argv=None):
         urls, args.timeout, args.max_connections, args.max_keepalive_connections
     )
 
-    # only consider redirects
-    redirects = d["Redirects"]
+    # only consider successful redirects
+    redirects = d["Successful redirects"]
 
     if len(redirects) == 0:
         print("No redirects found.")
         return 0
 
-    print_to_screen({"Redirects": redirects})
+    print_to_screen({"Successful redirects": redirects})
     print()
     print("Replace those redirects? [y/N] ", end="")
     if args.yes:
@@ -48,7 +48,7 @@ def fix(argv=None):
             return 1
 
     # create a dictionary from redirects
-    replace = dict([(r[0], r[2]) for r in redirects])
+    replace = dict([(r[0].url, r[-1].url) for r in redirects])
 
     for path in args.paths:
         path = Path(path)
