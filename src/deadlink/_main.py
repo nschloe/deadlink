@@ -30,7 +30,7 @@ def _get_urls_from_file(path):
 
 
 async def _get_return_code(
-    url: str, client, timeout: float, max_num_redirects: int = 100
+    url: str, client, timeout: float, max_num_redirects: int = 10
 ):
     k = 0
     seq = []
@@ -51,7 +51,6 @@ async def _get_return_code(
             httpx.ConnectError,
             httpx.ReadError,
             httpx.PoolTimeout,
-            ConnectionResetError,
         ):
             seq.append(Info(999, url))
             break
@@ -273,30 +272,14 @@ def print_to_screen(d):
         num = len(d[key])
         console.print(f"{key} ({num})", style="white")
 
-    key = "Successful redirects"
-    if key in d and len(d[key]) > 0:
-        print()
-        num = len(d[key])
-        console.print(f"{key} ({num}):", style="yellow")
-        for seq in d[key]:
-            prefix = "   "
-            for item in seq:
-                if item.status_code < 300:
-                    color = "green"
-                elif 300 <= item.status_code < 400:
-                    color = "yellow"
-                else:
-                    color = "red"
-                console.print(f"{prefix}{item.status_code}: {item.url}", style=color)
-                prefix = "   → "
 
-    key = "Failing redirects"
-    if key in d and len(d[key]) > 0:
+    keycol = [("Successful redirects", "yellow"), ("Failing redirects", "red")]
+    for key, base_color in keycol:
+        if key not in d or len(d[key]) == 0:
+            continue
         print()
-        num = len(d[key])
-        console.print(f"{key} ({num}):", style="red")
-        for seq in d[key]:
-            prefix = "   "
+        console.print(f"{key} ({len(d[key])}):", style=base_color)
+        for k, seq in enumerate(d[key]):
             for item in seq:
                 if item.status_code < 300:
                     color = "green"
@@ -304,20 +287,20 @@ def print_to_screen(d):
                     color = "yellow"
                 else:
                     color = "red"
-                console.print(f"{prefix}{item.status_code}: {item.url}", style=color)
-                prefix = "   → "
+                if k == 0:
+                    console.print(f"   {item.status_code}:   {item.url}", style=color)
+                else:
+                    console.print(f"   → {item.status_code}: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
-        if key not in d:
+        if key not in d or len(d[key]) == 0:
             continue
-        err = d[key]
-        if len(err) > 0:
-            print()
-            console.print(f"{key} ({len(err)}):", style="red")
-            for item in err:
-                url = item[0].url
-                status_code = item[0].status_code
-                if item[0].status_code < 900:
-                    console.print(f"  {status_code}: {url}", style="red")
-                else:
-                    console.print(f"  {url}", style="red")
+        print()
+        console.print(f"{key} ({len(d[key])}):", style="red")
+        for item in d[key]:
+            url = item[0].url
+            status_code = item[0].status_code
+            if item[0].status_code < 900:
+                console.print(f"  {status_code}: {url}", style="red")
+            else:
+                console.print(f"  {url}", style="red")
