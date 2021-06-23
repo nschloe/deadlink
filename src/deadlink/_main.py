@@ -272,15 +272,14 @@ def print_to_screen(d):
         num = len(d[key])
         console.print(f"{key} ({num})", style="white")
 
-
     keycol = [("Successful redirects", "yellow"), ("Failing redirects", "red")]
     for key, base_color in keycol:
         if key not in d or len(d[key]) == 0:
             continue
         print()
         console.print(f"{key} ({len(d[key])}):", style=base_color)
-        for k, seq in enumerate(d[key]):
-            for item in seq:
+        for seq in d[key]:
+            for k, item in enumerate(seq):
                 if item.status_code < 300:
                     color = "green"
                 elif 300 <= item.status_code < 400:

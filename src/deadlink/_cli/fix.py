@@ -24,7 +24,7 @@ def fix(argv=None):
         None if args.ignore is None else set(args.ignore),
     )
 
-    print(f"Found {len(urls)} unique HTTP URLs (ignored {len(ignored_urls)})")
+    print(f"Found {len(urls)} unique HTTP(s) URLs (ignored {len(ignored_urls)})")
     d = categorize_urls(
         urls, args.timeout, args.max_connections, args.max_keepalive_connections
     )
