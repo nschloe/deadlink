@@ -1,5 +1,6 @@
 import asyncio
 import re
+from collections import namedtuple
 from pathlib import Path
 from typing import Dict, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
@@ -16,6 +17,8 @@ url_regex = re.compile(
     r"http(?:s)?:\/\/.(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&/=]*)"
 )
 
+Info = namedtuple("Info", ["status_code", "url"])
+
 
 def _get_urls_from_file(path):
     try:
@@ -26,22 +29,39 @@ def _get_urls_from_file(path):
     return url_regex.findall(content)
 
 
-async def _get_return_code(url: str, client, timeout: float):
-    try:
-        r = await client.head(url, allow_redirects=False, timeout=timeout)
-    except httpx.ConnectTimeout:
-        return url, 998, None
-    except (
-        httpx.RemoteProtocolError,
-        httpx.ReadTimeout,
-        httpx.LocalProtocolError,
-        httpx.ConnectError,
-        httpx.ReadError,
-        httpx.PoolTimeout,
-    ):
-        return url, 999, None
+async def _get_return_code(
+    url: str, client, timeout: float, max_num_redirects: int = 10
+):
+    k = 0
+    seq = []
+    while True:
+        if k >= max_num_redirects:
+            seq.append(Info(997, url))
+            break
 
-    if "Location" in r.headers:
+        try:
+            r = await client.head(url, allow_redirects=False, timeout=timeout)
+        except httpx.ConnectTimeout:
+            seq.append(Info(998, url))
+            break
+        except (
+            httpx.RemoteProtocolError,
+            httpx.ReadTimeout,
+            httpx.LocalProtocolError,
+            httpx.ConnectError,
+            httpx.ReadError,
+            httpx.PoolTimeout,
+        ):
+            seq.append(Info(999, url))
+            break
+
+        seq.append(Info(r.status_code, url))
+
+        if "Location" not in r.headers:
+            break
+
+        # Handle redirect
+        assert 300 <= r.status_code < 400
         loc = r.headers["Location"]
         url_split = urlsplit(url)
 
@@ -67,12 +87,11 @@ async def _get_return_code(url: str, client, timeout: float):
         if url_split.fragment != "" and loc_split[4] == "":
             loc_split[4] = url_split.fragment
 
-        loc = urlunsplit(loc_split)
+        url = urlunsplit(loc_split)
 
-    else:
-        loc = None
+        k += 1
 
-    return url, r.status_code, loc
+    return seq
 
 
 async def _get_all_return_codes(
@@ -90,6 +109,7 @@ async def _get_all_return_codes(
             asyncio.as_completed(tasks), description="Checking...", total=len(urls)
         ):
             ret.append(await task)
+
     return ret
 
 
@@ -199,21 +219,26 @@ def categorize_urls(
     r = asyncio.run(
         _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
     )
+
     # sort results into dictionary
     d = {
         "OK": [],
-        "Redirects": [],
+        "Successful redirects": [],
+        "Failing redirects": [],
         "Client errors": [],
         "Server errors": [],
         "Timeouts": [],
         "Other errors": [],
     }
     for item in r:
-        status_code = item[1]
+        status_code = item[0].status_code
         if 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            d["Redirects"].append(item)
+            if 200 <= item[-1].status_code < 300:
+                d["Successful redirects"].append(item)
+            else:
+                d["Failing redirects"].append(item)
         elif 400 <= status_code < 500:
             d["Client errors"].append(item)
         elif 500 <= status_code < 600:
@@ -231,34 +256,50 @@ def categorize_urls(
 def print_to_screen(d):
     # sort by status code
     for key, value in d.items():
-        d[key] = sorted(value, key=lambda x: x[1])
+        d[key] = sorted(value, key=lambda x: x[0].status_code)
 
     console = Console()
 
-    if "OK" in d and len(d["OK"]) > 0:
+    key = "OK"
+    if key in d and len(d[key]) > 0:
         print()
-        console.print(f"OK ({len(d['OK'])})", style="green")
+        num = len(d[key])
+        console.print(f"{key} ({num})", style="green")
 
-    if "Ignored" in d and len(d["Ignored"]) > 0:
+    key = "Ignored"
+    if key in d and len(d[key]) > 0:
         print()
-        console.print(f"Ignored ({len(d['Ignored'])})", style="white")
+        num = len(d[key])
+        console.print(f"{key} ({num})", style="white")
 
-    if "Redirects" in d and len(d["Redirects"]) > 0:
+    keycol = [("Successful redirects", "yellow"), ("Failing redirects", "red")]
+    for key, base_color in keycol:
+        if key not in d or len(d[key]) == 0:
+            continue
         print()
-        console.print(f"Redirects ({len(d['Redirects'])}):", style="yellow")
-        for url, status_code, loc in d["Redirects"]:
-            console.print(f"  {status_code}: {url}", style="yellow")
-            console.print(f"     → {loc}", style="yellow")
+        console.print(f"{key} ({len(d[key])}):", style=base_color)
+        for seq in d[key]:
+            for k, item in enumerate(seq):
+                if item.status_code < 300:
+                    color = "green"
+                elif 300 <= item.status_code < 400:
+                    color = "yellow"
+                else:
+                    color = "red"
+                if k == 0:
+                    console.print(f"   {item.status_code}:   {item.url}", style=color)
+                else:
+                    console.print(f"   → {item.status_code}: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
-        if key not in d:
+        if key not in d or len(d[key]) == 0:
             continue
-        err = d[key]
-        if len(err) > 0:
-            print()
-            console.print(f"{key} ({len(err)}):", style="red")
-            for url, status_code, _ in err:
-                if status_code < 900:
-                    console.print(f"  {status_code}: {url}", style="red")
-                else:
-                    console.print(f"  {url}", style="red")
+        print()
+        console.print(f"{key} ({len(d[key])}):", style="red")
+        for item in d[key]:
+            url = item[0].url
+            status_code = item[0].status_code
+            if item[0].status_code < 900:
+                console.print(f"  {status_code}: {url}", style="red")
+            else:
+                console.print(f"  {url}", style="red")
