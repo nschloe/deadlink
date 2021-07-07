@@ -21,16 +21,16 @@ def check(argv=None):
     files = find_files(args.paths)
 
     # filter files by allow-ignore-lists
-    allow_files = set() if args.allow_files is None else args.allow_files
-    ignore_files = set() if args.ignore_files is None else args.ignore_files
+    allow_patterns = set() if args.allow_files is None else set(args.allow_files)
+    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
 
     d = read_config()
     if "allow_files" in d:
-        allow_files = allow_files.union(set(d["allow_files"]))
+        allow_patterns = allow_patterns.union(set(d["allow_files"]))
     if "ignore_files" in d:
-        ignore_files = ignore_files.union(set(d["ignore_files"]))
+        ignore_patterns = ignore_patterns.union(set(d["ignore_files"]))
 
-    files, _ = filter_allow_ignore(files, allow_files, ignore_files)
+    files, ignored_files = filter_allow_ignore(files, allow_patterns, ignore_patterns)
 
     urls = find_urls(files)
     urls, ignored_urls = filter_allow_ignore(
@@ -41,7 +41,7 @@ def check(argv=None):
 
     print(
         f"Found {len(urls)} unique URLs in {len(files)} files "
-        f"(ignored {len(ignored_urls)})"
+        f"(ignored {len(ignored_files)} files, {len(ignored_urls)} URLs)"
     )
     d = categorize_urls(
         urls, args.timeout, args.max_connections, args.max_keepalive_connections
