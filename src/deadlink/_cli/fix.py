@@ -5,7 +5,7 @@ from pathlib import Path
 from ..__about__ import __version__
 from .._main import (
     categorize_urls,
-    filter_urls,
+    filter_allow_ignore,
     find_urls,
     print_to_screen,
     replace_in_file,
@@ -17,7 +17,7 @@ def fix(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    urls = find_urls(args.paths)
+    urls = find_urls(args.paths, args.ignore_files)
     urls, ignored_urls = filter_urls(
         urls,
         None if args.allow is None else set(args.allow),
@@ -94,17 +94,24 @@ def _get_parser():
     )
     parser.add_argument(
         "-i",
-        "--ignore",
+        "--ignore-urls",
         type=str,
         nargs="+",
         help="ignore URLs containing these strings (e.g., github.com)",
     )
     parser.add_argument(
         "-a",
-        "--allow",
+        "--allow-urls",
         type=str,
         nargs="+",
         help="only consider URLs containing these strings (e.g., http:)",
+    )
+    parser.add_argument(
+        "-if",
+        "--ignore-files",
+        type=str,
+        nargs="+",
+        help="ignore file names containing these strings (e.g., .svg)",
     )
     parser.add_argument(
         "-y",

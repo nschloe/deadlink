@@ -2,7 +2,7 @@ import asyncio
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -113,19 +113,21 @@ async def _get_all_return_codes(
     return ret
 
 
-def find_urls(paths):
-    urls = []
-    for path in paths:
-        path = Path(path)
-        if path.is_dir():
-            for p in path.rglob("*"):
-                if p.is_file():
-                    urls += _get_urls_from_file(p)
-        elif path.is_file():
-            urls += _get_urls_from_file(path)
-        else:
-            raise ValueError(f"Could not find path {path}")
-    return set(urls)
+def find_non_hidden_files(root):
+    for path in Path(root).glob("*"):
+        if not path.name.startswith("."):
+            if path.is_file():
+                yield str(path)
+            else:
+                yield from find_non_hidden_files(path)
+
+
+def find_files(paths: List[str]):
+    return [filepath for path in paths for filepath in find_non_hidden_files(path)]
+
+
+def find_urls(files):
+    return set(url for f in files for url in _get_urls_from_file(f))
 
 
 def replace_in_string(content: str, replacements: Dict[str, str]):
@@ -163,51 +165,43 @@ def replace_in_file(p, redirects: Dict[str, str]):
             f.write(new_content)
 
 
-def filter_urls(
-    urls: Set[str], allow_set: Optional[Set[str]], ignore_set: Optional[Set[str]]
-):
-    if allow_set is None:
-        allow_set = set()
-    if ignore_set is None:
-        ignore_set = set()
-
+def read_config():
     # check if there is a config file with more allowed/ignored domains
     config_file = Path(appdirs.user_config_dir()) / "deadlink" / "config.toml"
     try:
         with open(config_file) as f:
             out = toml.load(f)
     except FileNotFoundError:
-        pass
-    else:
-        if "allow" in out:
-            allow_set = allow_set.union(set(out["allow"]))
-        if "ignore" in out:
-            ignore_set = ignore_set.union(set(out["ignore"]))
+        out = {}
 
-    # filter out non-allowed and ignored urls
-    allowed_urls = set()
-    ignored_urls = set()
-    for url in urls:
+    return out
+
+
+def filter_allow_ignore(items: Set[str], allow_set: Set[str], ignore_set: Set[str]):
+    # filter out non-allowed and ignored items
+    allowed_items = set()
+    ignored_items = set()
+    for item in items:
         is_allowed = True
 
         if is_allowed:
             for a in allow_set:
-                if re.search(a, url) is None:
+                if re.search(a, item) is None:
                     is_allowed = False
                     break
 
         if is_allowed:
             for i in ignore_set:
-                if re.search(i, url) is not None:
+                if re.search(i, item) is not None:
                     is_allowed = False
                     break
 
         if is_allowed:
-            allowed_urls.add(url)
+            allowed_items.add(item)
         else:
-            ignored_urls.add(url)
+            ignored_items.add(item)
 
-    return allowed_urls, ignored_urls
+    return allowed_items, ignored_items
 
 
 def categorize_urls(
