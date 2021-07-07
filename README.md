@@ -30,14 +30,17 @@ This only considers URLs containing `http:` and _not_ containing `stackoverflow.
 `github`. You can also place allow and ignore lists in the config file
 `~/.config/deadlink/config.toml`, e.g.,
 ```toml
-allow = [
+allow_urls = [
   "https:"
 ]
-ignore = [
+ignore_urls = [
   "stackoverflow.com",
   "math.stackexchange.com",
   "discord.gg",
   "doi.org"
+]
+igonore_files = [
+  ".svg"
 ]
 ```
 See

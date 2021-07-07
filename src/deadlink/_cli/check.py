@@ -2,7 +2,14 @@ import argparse
 import sys
 
 from ..__about__ import __version__
-from .._main import categorize_urls, filter_urls, find_urls, print_to_screen
+from .._main import (
+    categorize_urls,
+    filter_allow_ignore,
+    find_files,
+    find_urls,
+    print_to_screen,
+    read_config,
+)
 
 
 def check(argv=None):
@@ -10,14 +17,32 @@ def check(argv=None):
     parser = _get_parser()
     args = parser.parse_args(argv)
 
-    urls = find_urls(args.paths)
-    urls, ignored_urls = filter_urls(
+    # get non-hidden files in non-hidden directories
+    files = find_files(args.paths)
+
+    # filter files by allow-ignore-lists
+    allow_patterns = set() if args.allow_files is None else set(args.allow_files)
+    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
+
+    d = read_config()
+    if "allow_files" in d:
+        allow_patterns = allow_patterns.union(set(d["allow_files"]))
+    if "ignore_files" in d:
+        ignore_patterns = ignore_patterns.union(set(d["ignore_files"]))
+
+    files, ignored_files = filter_allow_ignore(files, allow_patterns, ignore_patterns)
+
+    urls = find_urls(files)
+    urls, ignored_urls = filter_allow_ignore(
         urls,
-        None if args.allow is None else set(args.allow),
-        None if args.ignore is None else set(args.ignore),
+        set() if args.allow_urls is None else set(args.allow_urls),
+        set() if args.ignore_urls is None else set(args.ignore_urls),
     )
 
-    print(f"Found {len(urls)} unique HTTP(s) URLs (ignored {len(ignored_urls)})")
+    print(
+        f"Found {len(urls)} unique URLs in {len(files)} files "
+        f"(ignored {len(ignored_files)} files, {len(ignored_urls)} URLs)"
+    )
     d = categorize_urls(
         urls, args.timeout, args.max_connections, args.max_keepalive_connections
     )
@@ -59,18 +84,32 @@ def _get_parser():
         help="number of allowable keep-alive connections (default: 10)",
     )
     parser.add_argument(
+        "-a",
+        "--allow-urls",
+        type=str,
+        nargs="+",
+        help="only consider URLs containing these strings (e.g., http:)",
+    )
+    parser.add_argument(
         "-i",
-        "--ignore",
+        "--ignore-urls",
         type=str,
         nargs="+",
         help="ignore URLs containing these strings (e.g., github.com)",
     )
     parser.add_argument(
-        "-a",
-        "--allow",
+        "-af",
+        "--allow-files",
         type=str,
         nargs="+",
-        help="only consider URLs containing these strings (e.g., http:)",
+        help="only consider file names containing these strings (e.g., .txt)",
+    )
+    parser.add_argument(
+        "-if",
+        "--ignore-files",
+        type=str,
+        nargs="+",
+        help="ignore file names containing these strings (e.g., .svg)",
     )
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
