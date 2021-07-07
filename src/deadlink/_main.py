@@ -2,7 +2,7 @@ import asyncio
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -114,12 +114,17 @@ async def _get_all_return_codes(
 
 
 def find_non_hidden_files(root):
-    for path in Path(root).glob("*"):
-        if not path.name.startswith("."):
-            if path.is_file():
-                yield str(path)
-            else:
-                yield from find_non_hidden_files(path)
+    root = Path(root)
+    if root.is_file():
+        if not root.name.startswith("."):
+            yield str(root)
+    else:
+        for path in root.glob("*"):
+            if not path.name.startswith("."):
+                if path.is_file():
+                    yield str(path)
+                else:
+                    yield from find_non_hidden_files(path)
 
 
 def find_files(paths: List[str]):
