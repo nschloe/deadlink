@@ -47,18 +47,24 @@ def replace_redirects(argv=None):
 
     urls = find_urls(files)
 
-    num_urls_before = len(urls)
-    urls = set(
-        filter(lambda item: is_allowed(item, allow_patterns, ignore_patterns), urls)
-    )
-    num_ignored_urls = num_urls_before - len(urls)
+    # num_urls_before = len(urls)
+    # urls = set(
+    #     filter(lambda item: is_allowed(item, allow_patterns, ignore_patterns), urls)
+    # )
+    # num_ignored_urls = num_urls_before - len(urls)
+
+    num_ignored_urls = 666
 
     print(
         f"Found {len(urls)} unique URLs in {len(files)} files "
         f"(ignored {num_ignored_files} files, {num_ignored_urls} URLs)"
     )
     d = categorize_urls(
-        urls, args.timeout, args.max_connections, args.max_keepalive_connections
+        urls,
+        args.timeout,
+        args.max_connections,
+        args.max_keepalive_connections,
+        lambda url: is_allowed(url, allow_patterns, ignore_patterns),
     )
 
     print(d)

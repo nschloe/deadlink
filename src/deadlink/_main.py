@@ -2,7 +2,7 @@ import asyncio
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Callable, Dict, List, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -30,11 +30,18 @@ def _get_urls_from_file(path):
 
 
 async def _get_return_code(
-    url: str, client, timeout: float, max_num_redirects: int = 10
+    url: str,
+    client,
+    timeout: float,
+    max_num_redirects: int = 10,
+    is_allowed: Optional[Callable] = None,
 ):
     k = 0
     seq = []
     while True:
+        if is_allowed is not None and not is_allowed(url):
+            break
+
         try:
             r = await client.head(url, allow_redirects=False, timeout=timeout)
         except httpx.ConnectTimeout:
@@ -95,7 +102,11 @@ async def _get_return_code(
 
 
 async def _get_all_return_codes(
-    urls, timeout: float, max_connections: int, max_keepalive_connections: int
+    urls,
+    timeout: float,
+    max_connections: int,
+    max_keepalive_connections: int,
+    is_allowed: Optional[Callable] = None,
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
@@ -104,7 +115,9 @@ async def _get_all_return_codes(
         max_connections=max_connections,
     )
     async with httpx.AsyncClient(limits=limits) as client:
-        tasks = map(lambda x: _get_return_code(x, client, timeout), urls)
+        tasks = map(
+            lambda x: _get_return_code(x, client, timeout, is_allowed=is_allowed), urls
+        )
         for task in track(
             asyncio.as_completed(tasks), description="Checking...", total=len(urls)
         ):
@@ -205,9 +218,12 @@ def categorize_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    is_allowed: Optional[Callable] = None,
 ):
     r = asyncio.run(
-        _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
+        _get_all_return_codes(
+            urls, timeout, max_connections, max_keepalive_connections, is_allowed
+        )
     )
 
     # sort results into dictionary
@@ -225,7 +241,10 @@ def categorize_urls(
         if 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            if 200 <= item[-1].status_code < 300:
+            # If the last entry is a redirect, it's because the redirect chain has been
+            # aborted either by max_num_redirects or by some allow/ignore_url setting.
+            # Treat those as successful for now.
+            if 200 <= item[-1].status_code < 400:
                 d["Successful redirects"].append(item)
             else:
                 d["Failing redirects"].append(item)
