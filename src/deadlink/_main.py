@@ -33,6 +33,7 @@ async def _get_return_code(
     url: str,
     client,
     timeout: float,
+    follow_codes: List[int],
     max_num_redirects: int = 10,
     is_allowed: Optional[Callable] = None,
 ):
@@ -55,7 +56,6 @@ async def _get_return_code(
             httpx.ConnectError,
             httpx.ReadError,
             httpx.PoolTimeout,
-            ConnectionResetError,
         ):
             seq.append(Info(999, url))
             break
@@ -65,11 +65,13 @@ async def _get_return_code(
         if k >= max_num_redirects:
             break
 
+        if r.status_code not in follow_codes:
+            break
+
         if "Location" not in r.headers:
             break
 
         # Handle redirect
-        assert 300 <= r.status_code < 400
         loc = r.headers["Location"]
         url_split = urlsplit(url)
 
@@ -107,6 +109,7 @@ async def _get_all_return_codes(
     timeout: float,
     max_connections: int,
     max_keepalive_connections: int,
+    follow_codes: List[int],
     is_allowed: Optional[Callable] = None,
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
@@ -117,7 +120,10 @@ async def _get_all_return_codes(
     )
     async with httpx.AsyncClient(limits=limits) as client:
         tasks = map(
-            lambda x: _get_return_code(x, client, timeout, is_allowed=is_allowed), urls
+            lambda x: _get_return_code(
+                x, client, timeout, follow_codes=follow_codes, is_allowed=is_allowed
+            ),
+            urls,
         )
         for task in track(
             asyncio.as_completed(tasks), description="Checking...", total=len(urls)
@@ -221,17 +227,25 @@ def categorize_urls(
     max_keepalive_connections: int = 10,
     is_allowed: Optional[Callable] = None,
 ):
+    # only follow permanent redirects
+    follow_codes = [301]
     r = asyncio.run(
         _get_all_return_codes(
-            urls, timeout, max_connections, max_keepalive_connections, is_allowed
+            urls,
+            timeout,
+            max_connections,
+            max_keepalive_connections,
+            follow_codes,
+            is_allowed,
         )
     )
 
     # sort results into dictionary
     d = {
         "OK": [],
-        "Successful redirects": [],
-        "Failing redirects": [],
+        "Successful permanent redirects": [],
+        "Failing permanent redirects": [],
+        "Non-permanent redirects": [],
         "Client errors": [],
         "Server errors": [],
         "Timeouts": [],
@@ -245,10 +259,13 @@ def categorize_urls(
         elif 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            if item[-1].status_code is None or (200 <= item[-1].status_code < 300):
-                d["Successful redirects"].append(item)
+            if status_code == 301:
+                if 200 <= item[-1].status_code < 400:
+                    d["Successful permanent redirects"].append(item)
+                else:
+                    d["Failing permanent redirects"].append(item)
             else:
-                d["Failing redirects"].append(item)
+                d["Non-permanent redirects"].append(item)
         elif 400 <= status_code < 500:
             d["Client errors"].append(item)
         elif 500 <= status_code < 600:
@@ -276,13 +293,22 @@ def print_to_screen(d):
         num = len(d[key])
         console.print(f"{key} ({num})", style="green")
 
+    key = "Non-permanent redirects"
+    if key in d and len(d[key]) > 0:
+        print()
+        num = len(d[key])
+        console.print(f"{key} ({num})", style="green")
+
     key = "Ignored"
     if key in d and len(d[key]) > 0:
         print()
         num = len(d[key])
         console.print(f"{key} ({num})", style="white")
 
-    keycol = [("Successful redirects", "yellow"), ("Failing redirects", "red")]
+    keycol = [
+        ("Successful permanent redirects", "yellow"),
+        ("Failing permanent redirects", "red"),
+    ]
     for key, base_color in keycol:
         if key not in d or len(d[key]) == 0:
             continue

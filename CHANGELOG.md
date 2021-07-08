@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## UNRELEASED
+## [0.3.0] - 2021-07-08
 
 ### Changed
 - renamed deadlink-fix to deadlink-replace-redirects
+- only follow permanent redirects (301)
 
 ### Fixed
 - respect the allowed/ignored URL patterns in the config

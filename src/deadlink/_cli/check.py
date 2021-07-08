@@ -56,7 +56,10 @@ def check(argv=None):
         f"(ignored {num_ignored_files} files, {num_ignored_urls} URLs)"
     )
     d = categorize_urls(
-        urls, args.timeout, args.max_connections, args.max_keepalive_connections
+        urls,
+        args.timeout,
+        args.max_connections,
+        args.max_keepalive_connections,
     )
 
     print_to_screen(d)

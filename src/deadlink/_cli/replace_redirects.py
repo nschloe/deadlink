@@ -59,14 +59,14 @@ def replace_redirects(argv=None):
         lambda url: is_allowed(url, allow_patterns, ignore_patterns),
     )
 
-    # only consider successful redirects
-    redirects = d["Successful redirects"]
+    # only consider successful permanent redirects
+    redirects = d["Successful permanent redirects"]
 
     if len(redirects) == 0:
         print("No redirects found.")
         return 0
 
-    print_to_screen({"Successful redirects": redirects})
+    print_to_screen({"Successful permanent redirects": redirects})
     print()
     if len(redirects) == 1:
         print("Replace this 1 redirect? [y/N] ", end="")
