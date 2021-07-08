@@ -14,7 +14,7 @@ from .._main import (
 )
 
 
-def fix(argv=None):
+def replace_redirects(argv=None):
     # Parse command line arguments.
     parser = _get_parser()
     args = parser.parse_args(argv)
