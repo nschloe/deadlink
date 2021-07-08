@@ -22,24 +22,27 @@ def replace_redirects(argv=None):
     # get non-hidden files in non-hidden directories
     files = find_files(args.paths)
 
+    d = read_config()
+
     # filter files by allow-ignore-lists
     allow_patterns = set() if args.allow_files is None else set(args.allow_files)
-    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
-
-    d = read_config()
     if "allow_files" in d:
         allow_patterns = allow_patterns.union(set(d["allow_files"]))
+    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
     if "ignore_files" in d:
         ignore_patterns = ignore_patterns.union(set(d["ignore_files"]))
 
     files, ignored_files = filter_allow_ignore(files, allow_patterns, ignore_patterns)
 
+    allow_patterns = set() if args.allow_urls is None else set(args.allow_urls)
+    if "allow_urls" in d:
+        allow_patterns = allow_patterns.union(set(d["allow_urls"]))
+    ignore_patterns = set() if args.ignore_urls is None else set(args.ignore_urls)
+    if "ignore_urls" in d:
+        ignore_patterns = ignore_patterns.union(set(d["ignore_urls"]))
+
     urls = find_urls(files)
-    urls, ignored_urls = filter_allow_ignore(
-        urls,
-        set() if args.allow_urls is None else set(args.allow_urls),
-        set() if args.ignore_urls is None else set(args.ignore_urls),
-    )
+    urls, ignored_urls = filter_allow_ignore(urls, allow_patterns, ignore_patterns)
 
     print(
         f"Found {len(urls)} unique URLs in {len(files)} files "
@@ -58,7 +61,7 @@ def replace_redirects(argv=None):
 
     print_to_screen({"Successful redirects": redirects})
     print()
-    print("Replace those redirects? [y/N] ", end="")
+    print(f"Replace those {len(redirects)} redirects? [y/N] ", end="")
     if args.yes:
         print("Auto yes.")
     else:
