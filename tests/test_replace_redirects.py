@@ -1,6 +1,8 @@
 import tempfile
 from pathlib import Path
 
+import pytest
+
 import deadlink
 
 
@@ -26,9 +28,22 @@ def test_replace():
     assert ref == new_content
 
 
-def test_fix_cli():
-    content = "some text\nhttps://httpstat.us/302\nmore text"
-    ref = "some text\nhttps://httpstat.us\nmore text"
+@pytest.mark.parametrize(
+    "content, ref",
+    [
+        (
+            "some text\nhttps://httpstat.us/301\nmore text",
+            "some text\nhttps://httpstat.us\nmore text",
+        ),
+        # For some reason, http://www.google.com doesn't get redirected
+        # https://stackoverflow.com/q/68303464/353337
+        # (
+        #     "http://www.google.com",
+        #     "https://www.google.com"
+        # )
+    ],
+)
+def test_fix_cli(content, ref):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -42,23 +57,3 @@ def test_fix_cli():
             out = f.read()
 
         assert out == ref
-
-
-# For some reason, http://www.google.com doesn't get redirected
-# https://stackoverflow.com/questions/68303464/curl-reports-return-code-200-but-browser-redirects
-# def test_fix_cli2():
-#     content = "http://www.google.com"
-#     ref = "https://www.google.com"
-#
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         tmpdir = Path(tmpdir)
-#         infile = tmpdir / "in.txt"
-#         with open(infile, "w") as f:
-#             f.write(content)
-#
-#         deadlink._cli.replace_redirects([str(infile), "--yes"])
-#
-#         with open(infile) as f:
-#             out = f.read()
-#
-#         assert out == ref
