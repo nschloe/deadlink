@@ -42,3 +42,23 @@ def test_fix_cli():
             out = f.read()
 
         assert out == ref
+
+
+# For some reason, http://www.google.com doesn't get redirected
+# https://stackoverflow.com/questions/68303464/curl-reports-return-code-200-but-browser-redirects
+# def test_fix_cli2():
+#     content = "http://www.google.com"
+#     ref = "https://www.google.com"
+#
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         tmpdir = Path(tmpdir)
+#         infile = tmpdir / "in.txt"
+#         with open(infile, "w") as f:
+#             f.write(content)
+#
+#         deadlink._cli.replace_redirects([str(infile), "--yes"])
+#
+#         with open(infile) as f:
+#             out = f.read()
+#
+#         assert out == ref
