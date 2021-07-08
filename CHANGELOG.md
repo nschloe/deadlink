@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - renamed deadlink-fix to deadlink-replace-redirects
 - only follow permanent redirects (301)
+- removed `__version__`
 
 ### Fixed
 - respect the allowed/ignored URL patterns in the config
