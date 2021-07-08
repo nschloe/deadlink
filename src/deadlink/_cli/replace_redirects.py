@@ -55,6 +55,12 @@ def replace_redirects(argv=None):
     # only consider successful redirects
     redirects = d["Successful redirects"]
 
+    # print(redirects)
+    # print()
+    # print(redirects[-1])
+    # urls, ignored_urls = filter_allow_ignore(urls, allow_patterns, ignore_patterns)
+    # exit(1)
+
     if len(redirects) == 0:
         print("No redirects found.")
         return 0

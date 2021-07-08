@@ -4,9 +4,9 @@ import sys
 from ..__about__ import __version__
 from .._main import (
     categorize_urls,
-    filter_allow_ignore,
     find_files,
     find_urls,
+    is_allowed,
     print_to_screen,
     read_config,
 )
@@ -30,7 +30,11 @@ def check(argv=None):
     if "ignore_files" in d:
         ignore_patterns = ignore_patterns.union(set(d["ignore_files"]))
 
-    files, ignored_files = filter_allow_ignore(files, allow_patterns, ignore_patterns)
+    num_files_before = len(files)
+    files = set(
+        filter(lambda item: is_allowed(item, allow_patterns, ignore_patterns), files)
+    )
+    num_ignored_files = num_files_before - len(files)
 
     allow_patterns = set() if args.allow_urls is None else set(args.allow_urls)
     if "allow_urls" in d:
@@ -40,11 +44,16 @@ def check(argv=None):
         ignore_patterns = ignore_patterns.union(set(d["ignore_urls"]))
 
     urls = find_urls(files)
-    urls, ignored_urls = filter_allow_ignore(urls, allow_patterns, ignore_patterns)
+
+    num_urls_before = len(urls)
+    urls = set(
+        filter(lambda item: is_allowed(item, allow_patterns, ignore_patterns), urls)
+    )
+    num_ignored_urls = num_urls_before - len(urls)
 
     print(
         f"Found {len(urls)} unique URLs in {len(files)} files "
-        f"(ignored {len(ignored_files)} files, {len(ignored_urls)} URLs)"
+        f"(ignored {num_ignored_files} files, {num_ignored_urls} URLs)"
     )
     d = categorize_urls(
         urls, args.timeout, args.max_connections, args.max_keepalive_connections

@@ -51,6 +51,7 @@ async def _get_return_code(
             httpx.ConnectError,
             httpx.ReadError,
             httpx.PoolTimeout,
+            ConnectionResetError,
         ):
             seq.append(Info(999, url))
             break
@@ -182,31 +183,22 @@ def read_config():
     return out
 
 
-def filter_allow_ignore(items: Set[str], allow_set: Set[str], ignore_set: Set[str]):
-    # filter out non-allowed and ignored items
-    allowed_items = set()
-    ignored_items = set()
-    for item in items:
-        is_allowed = True
+def is_allowed(item, allow_set: Set[str], ignore_set: Set[str]):
+    is_allowed = True
 
-        if is_allowed:
-            for a in allow_set:
-                if re.search(a, item) is None:
-                    is_allowed = False
-                    break
+    if is_allowed:
+        for a in allow_set:
+            if re.search(a, item) is None:
+                is_allowed = False
+                break
 
-        if is_allowed:
-            for i in ignore_set:
-                if re.search(i, item) is not None:
-                    is_allowed = False
-                    break
+    if is_allowed:
+        for i in ignore_set:
+            if re.search(i, item) is not None:
+                is_allowed = False
+                break
 
-        if is_allowed:
-            allowed_items.add(item)
-        else:
-            ignored_items.add(item)
-
-    return allowed_items, ignored_items
+    return is_allowed
 
 
 def categorize_urls(
