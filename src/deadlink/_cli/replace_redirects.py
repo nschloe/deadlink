@@ -84,7 +84,11 @@ def replace_redirects(argv=None):
 
     print_to_screen({"Successful redirects": redirects})
     print()
-    print(f"Replace those {len(redirects)} redirects? [y/N] ", end="")
+    if len(redirects) == 1:
+        print("Replace this 1 redirect? [y/N] ", end="")
+    else:
+        print(f"Replace those {len(redirects)} redirects? [y/N] ", end="")
+
     if args.yes:
         print("Auto yes.")
     else:
