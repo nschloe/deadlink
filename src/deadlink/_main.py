@@ -2,7 +2,7 @@ import asyncio
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Callable, Dict, List, Optional, Set
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -30,13 +30,18 @@ def _get_urls_from_file(path):
 
 
 async def _get_return_code(
-    url: str, client, timeout: float, max_num_redirects: int = 10
+    url: str,
+    client,
+    timeout: float,
+    follow_codes: List[int],
+    max_num_redirects: int = 10,
+    is_allowed: Optional[Callable] = None,
 ):
     k = 0
     seq = []
     while True:
-        if k >= max_num_redirects:
-            seq.append(Info(997, url))
+        if is_allowed is not None and not is_allowed(url):
+            seq.append(Info(None, url))
             break
 
         try:
@@ -57,11 +62,16 @@ async def _get_return_code(
 
         seq.append(Info(r.status_code, url))
 
+        if k >= max_num_redirects:
+            break
+
+        if r.status_code not in follow_codes:
+            break
+
         if "Location" not in r.headers:
             break
 
         # Handle redirect
-        assert 300 <= r.status_code < 400
         loc = r.headers["Location"]
         url_split = urlsplit(url)
 
@@ -95,7 +105,12 @@ async def _get_return_code(
 
 
 async def _get_all_return_codes(
-    urls, timeout: float, max_connections: int, max_keepalive_connections: int
+    urls,
+    timeout: float,
+    max_connections: int,
+    max_keepalive_connections: int,
+    follow_codes: List[int],
+    is_allowed: Optional[Callable] = None,
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
@@ -104,7 +119,12 @@ async def _get_all_return_codes(
         max_connections=max_connections,
     )
     async with httpx.AsyncClient(limits=limits) as client:
-        tasks = map(lambda x: _get_return_code(x, client, timeout), urls)
+        tasks = map(
+            lambda x: _get_return_code(
+                x, client, timeout, follow_codes=follow_codes, is_allowed=is_allowed
+            ),
+            urls,
+        )
         for task in track(
             asyncio.as_completed(tasks), description="Checking...", total=len(urls)
         ):
@@ -182,31 +202,22 @@ def read_config():
     return out
 
 
-def filter_allow_ignore(items: Set[str], allow_set: Set[str], ignore_set: Set[str]):
-    # filter out non-allowed and ignored items
-    allowed_items = set()
-    ignored_items = set()
-    for item in items:
-        is_allowed = True
+def is_allowed(item, allow_set: Set[str], ignore_set: Set[str]):
+    is_allowed = True
 
-        if is_allowed:
-            for a in allow_set:
-                if re.search(a, item) is None:
-                    is_allowed = False
-                    break
+    if is_allowed:
+        for a in allow_set:
+            if re.search(a, item) is None:
+                is_allowed = False
+                break
 
-        if is_allowed:
-            for i in ignore_set:
-                if re.search(i, item) is not None:
-                    is_allowed = False
-                    break
+    if is_allowed:
+        for i in ignore_set:
+            if re.search(i, item) is not None:
+                is_allowed = False
+                break
 
-        if is_allowed:
-            allowed_items.add(item)
-        else:
-            ignored_items.add(item)
-
-    return allowed_items, ignored_items
+    return is_allowed
 
 
 def categorize_urls(
@@ -214,30 +225,47 @@ def categorize_urls(
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
+    is_allowed: Optional[Callable] = None,
 ):
+    # only follow permanent redirects
+    follow_codes = [301]
     r = asyncio.run(
-        _get_all_return_codes(urls, timeout, max_connections, max_keepalive_connections)
+        _get_all_return_codes(
+            urls,
+            timeout,
+            max_connections,
+            max_keepalive_connections,
+            follow_codes,
+            is_allowed,
+        )
     )
 
     # sort results into dictionary
     d = {
         "OK": [],
-        "Successful redirects": [],
-        "Failing redirects": [],
+        "Successful permanent redirects": [],
+        "Failing permanent redirects": [],
+        "Non-permanent redirects": [],
         "Client errors": [],
         "Server errors": [],
         "Timeouts": [],
         "Other errors": [],
+        "Ignored": [],
     }
     for item in r:
         status_code = item[0].status_code
-        if 200 <= status_code < 300:
+        if status_code is None:
+            d["Ignored"].append(item)
+        elif 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            if 200 <= item[-1].status_code < 300:
-                d["Successful redirects"].append(item)
+            if status_code == 301:
+                if 200 <= item[-1].status_code < 400:
+                    d["Successful permanent redirects"].append(item)
+                else:
+                    d["Failing permanent redirects"].append(item)
             else:
-                d["Failing redirects"].append(item)
+                d["Non-permanent redirects"].append(item)
         elif 400 <= status_code < 500:
             d["Client errors"].append(item)
         elif 500 <= status_code < 600:
@@ -265,13 +293,22 @@ def print_to_screen(d):
         num = len(d[key])
         console.print(f"{key} ({num})", style="green")
 
+    key = "Non-permanent redirects"
+    if key in d and len(d[key]) > 0:
+        print()
+        num = len(d[key])
+        console.print(f"{key} ({num})", style="green")
+
     key = "Ignored"
     if key in d and len(d[key]) > 0:
         print()
         num = len(d[key])
         console.print(f"{key} ({num})", style="white")
 
-    keycol = [("Successful redirects", "yellow"), ("Failing redirects", "red")]
+    keycol = [
+        ("Successful permanent redirects", "yellow"),
+        ("Failing permanent redirects", "red"),
+    ]
     for key, base_color in keycol:
         if key not in d or len(d[key]) == 0:
             continue
@@ -279,16 +316,20 @@ def print_to_screen(d):
         console.print(f"{key} ({len(d[key])}):", style=base_color)
         for seq in d[key]:
             for k, item in enumerate(seq):
-                if item.status_code < 300:
+                if item.status_code is None:
+                    color = "yellow"
+                elif item.status_code < 300:
                     color = "green"
                 elif 300 <= item.status_code < 400:
                     color = "yellow"
                 else:
                     color = "red"
+
+                sc = "xxx" if item.status_code is None else item.status_code
                 if k == 0:
-                    console.print(f"   {item.status_code}:   {item.url}", style=color)
+                    console.print(f"   {sc}:   {item.url}", style=color)
                 else:
-                    console.print(f"   → {item.status_code}: {item.url}", style=color)
+                    console.print(f"   → {sc}: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
         if key not in d or len(d[key]) == 0:

@@ -49,9 +49,9 @@ deadlink-check -h
 ```
 for all options. Use
 ```
-deadlink-fix path-or-file
+deadlink-replace-redirects paths-or-files
 ```
-to replace redirects in ann files. The same filters as for `deadlink-check` apply.
+to replace redirects in the given files. The same filters as for `deadlink-check` apply.
 
 Example output:
 

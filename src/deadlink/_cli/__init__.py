@@ -1,4 +1,4 @@
 from .check import check
-from .fix import fix
+from .replace_redirects import replace_redirects
 
-__all__ = ["check", "fix"]
+__all__ = ["check", "replace_redirects"]

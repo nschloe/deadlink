@@ -2,19 +2,24 @@ import argparse
 import sys
 from pathlib import Path
 
-from ..__about__ import __version__
 from .._main import (
     categorize_urls,
-    filter_allow_ignore,
     find_files,
     find_urls,
+    is_allowed,
     print_to_screen,
     read_config,
     replace_in_file,
 )
 
+try:
+    from importlib import metadata
+except ImportError:
+    # Python 3.7 and earlier
+    pass
 
-def fix(argv=None):
+
+def replace_redirects(argv=None):
     # Parse command line arguments.
     parser = _get_parser()
     args = parser.parse_args(argv)
@@ -22,43 +27,57 @@ def fix(argv=None):
     # get non-hidden files in non-hidden directories
     files = find_files(args.paths)
 
+    d = read_config()
+
     # filter files by allow-ignore-lists
     allow_patterns = set() if args.allow_files is None else set(args.allow_files)
-    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
-
-    d = read_config()
     if "allow_files" in d:
         allow_patterns = allow_patterns.union(set(d["allow_files"]))
+    ignore_patterns = set() if args.ignore_files is None else set(args.ignore_files)
     if "ignore_files" in d:
         ignore_patterns = ignore_patterns.union(set(d["ignore_files"]))
 
-    files, ignored_files = filter_allow_ignore(files, allow_patterns, ignore_patterns)
+    num_files_before = len(files)
+    files = set(
+        filter(lambda item: is_allowed(item, allow_patterns, ignore_patterns), files)
+    )
+    num_ignored_files = num_files_before - len(files)
+
+    allow_patterns = set() if args.allow_urls is None else set(args.allow_urls)
+    if "allow_urls" in d:
+        allow_patterns = allow_patterns.union(set(d["allow_urls"]))
+    ignore_patterns = set() if args.ignore_urls is None else set(args.ignore_urls)
+    if "ignore_urls" in d:
+        ignore_patterns = ignore_patterns.union(set(d["ignore_urls"]))
 
     urls = find_urls(files)
-    urls, ignored_urls = filter_allow_ignore(
-        urls,
-        set() if args.allow_urls is None else set(args.allow_urls),
-        set() if args.ignore_urls is None else set(args.ignore_urls),
-    )
 
     print(
         f"Found {len(urls)} unique URLs in {len(files)} files "
-        f"(ignored {len(ignored_files)} files, {len(ignored_urls)} URLs)"
+        f"(ignored {num_ignored_files} files)"
     )
     d = categorize_urls(
-        urls, args.timeout, args.max_connections, args.max_keepalive_connections
+        urls,
+        args.timeout,
+        args.max_connections,
+        args.max_keepalive_connections,
+        lambda url: is_allowed(url, allow_patterns, ignore_patterns),
     )
 
-    # only consider successful redirects
-    redirects = d["Successful redirects"]
+    # only consider successful permanent redirects
+    redirects = d["Successful permanent redirects"]
 
     if len(redirects) == 0:
         print("No redirects found.")
         return 0
 
-    print_to_screen({"Successful redirects": redirects})
+    print_to_screen({"Successful permanent redirects": redirects})
     print()
-    print("Replace those redirects? [y/N] ", end="")
+    if len(redirects) == 1:
+        print("Replace this 1 redirect? [y/N] ", end="")
+    else:
+        print(f"Replace those {len(redirects)} redirects? [y/N] ", end="")
+
     if args.yes:
         print("Auto yes.")
     else:
@@ -147,6 +166,11 @@ def _get_parser():
         action="store_true",
         help="automatic yes to prompt; useful for non-interactive runs (default: false)",
     )
+
+    try:
+        __version__ = metadata.version("deadlink")
+    except Exception:
+        __version__ = "unknown"
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(
