@@ -36,7 +36,7 @@ def test_fix_cli():
         with open(infile, "w") as f:
             f.write(content)
 
-        deadlink._cli.fix([str(infile), "--yes"])
+        deadlink._cli.replace_redirects([str(infile), "--yes"])
 
         with open(infile) as f:
             out = f.read()
