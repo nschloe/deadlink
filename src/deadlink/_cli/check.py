@@ -1,7 +1,6 @@
 import argparse
 import sys
 
-from ..__about__ import __version__
 from .._main import (
     categorize_urls,
     find_files,
@@ -10,6 +9,12 @@ from .._main import (
     print_to_screen,
     read_config,
 )
+
+try:
+    from importlib import metadata
+except ImportError:
+    # Python 3.7 and earlier
+    pass
 
 
 def check(argv=None):
@@ -126,6 +131,11 @@ def _get_parser():
         nargs="+",
         help="ignore file names containing these strings (e.g., .svg)",
     )
+
+    try:
+        __version__ = metadata.version("deadlink")
+    except Exception:
+        __version__ = "unknown"
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(

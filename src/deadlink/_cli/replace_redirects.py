@@ -2,7 +2,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from ..__about__ import __version__
 from .._main import (
     categorize_urls,
     find_files,
@@ -12,6 +11,12 @@ from .._main import (
     read_config,
     replace_in_file,
 )
+
+try:
+    from importlib import metadata
+except ImportError:
+    # Python 3.7 and earlier
+    pass
 
 
 def replace_redirects(argv=None):
@@ -161,6 +166,11 @@ def _get_parser():
         action="store_true",
         help="automatic yes to prompt; useful for non-interactive runs (default: false)",
     )
+
+    try:
+        __version__ = metadata.version("deadlink")
+    except Exception:
+        __version__ = "unknown"
 
     __copyright__ = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
     version_text = "\n".join(
