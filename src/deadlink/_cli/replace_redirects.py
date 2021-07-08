@@ -67,16 +67,8 @@ def replace_redirects(argv=None):
         lambda url: is_allowed(url, allow_patterns, ignore_patterns),
     )
 
-    print(d)
-
     # only consider successful redirects
     redirects = d["Successful redirects"]
-
-    # print(redirects)
-    # print()
-    # print(redirects[-1])
-    # urls, ignored_urls = filter_allow_ignore(urls, allow_patterns, ignore_patterns)
-    # exit(1)
 
     if len(redirects) == 0:
         print("No redirects found.")

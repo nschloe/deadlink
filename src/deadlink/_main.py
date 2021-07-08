@@ -40,6 +40,7 @@ async def _get_return_code(
     seq = []
     while True:
         if is_allowed is not None and not is_allowed(url):
+            seq.append(Info(None, url))
             break
 
         try:
@@ -235,16 +236,16 @@ def categorize_urls(
         "Server errors": [],
         "Timeouts": [],
         "Other errors": [],
+        "Ignored": [],
     }
     for item in r:
         status_code = item[0].status_code
-        if 200 <= status_code < 300:
+        if status_code is None:
+            d["Ignored"].append(item)
+        elif 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            # If the last entry is a redirect, it's because the redirect chain has been
-            # aborted either by max_num_redirects or by some allow/ignore_url setting.
-            # Treat those as successful for now.
-            if 200 <= item[-1].status_code < 400:
+            if item[-1].status_code is None or (200 <= item[-1].status_code < 300):
                 d["Successful redirects"].append(item)
             else:
                 d["Failing redirects"].append(item)
@@ -289,16 +290,20 @@ def print_to_screen(d):
         console.print(f"{key} ({len(d[key])}):", style=base_color)
         for seq in d[key]:
             for k, item in enumerate(seq):
-                if item.status_code < 300:
+                if item.status_code is None:
+                    color = "yellow"
+                elif item.status_code < 300:
                     color = "green"
                 elif 300 <= item.status_code < 400:
                     color = "yellow"
                 else:
                     color = "red"
+
+                sc = "xxx" if item.status_code is None else item.status_code
                 if k == 0:
-                    console.print(f"   {item.status_code}:   {item.url}", style=color)
+                    console.print(f"   {sc}:   {item.url}", style=color)
                 else:
-                    console.print(f"   → {item.status_code}: {item.url}", style=color)
+                    console.print(f"   → {sc}: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
         if key not in d or len(d[key]) == 0:
