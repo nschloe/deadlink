@@ -35,10 +35,6 @@ async def _get_return_code(
     k = 0
     seq = []
     while True:
-        if k >= max_num_redirects:
-            seq.append(Info(997, url))
-            break
-
         try:
             r = await client.head(url, allow_redirects=False, timeout=timeout)
         except httpx.ConnectTimeout:
@@ -57,6 +53,9 @@ async def _get_return_code(
             break
 
         seq.append(Info(r.status_code, url))
+
+        if k >= max_num_redirects:
+            break
 
         if "Location" not in r.headers:
             break
