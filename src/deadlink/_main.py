@@ -49,14 +49,8 @@ async def _get_return_code(
         except httpx.ConnectTimeout:
             seq.append(Info(998, url))
             break
-        except (
-            httpx.RemoteProtocolError,
-            httpx.ReadTimeout,
-            httpx.LocalProtocolError,
-            httpx.ConnectError,
-            httpx.ReadError,
-            httpx.PoolTimeout,
-        ):
+        except httpx.HTTPError:
+            # https://www.python-httpx.org/exceptions/
             seq.append(Info(999, url))
             break
 
