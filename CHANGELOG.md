@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2021-07-13
+
+### Changed
+- intercept more httpx errors
+
 ## [0.3.0] - 2021-07-08
 
 ### Changed
