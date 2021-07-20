@@ -10,12 +10,14 @@ import deadlink
         ("https://httpstat.us/404", "Client errors"),
         ("https://this-doesnt-exist.doesit", "Other errors"),
         ("https://httpstat.us/301", "Successful permanent redirects"),
+        ("https://httpstat.us/302", "Non-permanent redirects"),
         ("https://httpstat.us/500", "Server errors"),
         # ("https://httpstat.us/200?sleep=99999", "Timeouts")
     ],
 )
 def test_check(url, category):
     out = deadlink.categorize_urls({url})
+    print(out)
     assert len(out[category]) == 1
     deadlink._main.print_to_screen(out)
 
