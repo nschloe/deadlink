@@ -56,13 +56,11 @@ async def _get_return_code(
 
         seq.append(Info(r.status_code, url))
 
-        if k >= max_num_redirects:
-            break
-
-        if r.status_code not in follow_codes:
-            break
-
-        if "Location" not in r.headers:
+        if (
+            k >= max_num_redirects
+            or r.status_code not in follow_codes
+            or "Location" not in r.headers
+        ):
             break
 
         # Handle redirect
@@ -310,11 +308,9 @@ def print_to_screen(d):
         console.print(f"{key} ({len(d[key])}):", style=base_color)
         for seq in d[key]:
             for k, item in enumerate(seq):
-                if item.status_code is None:
-                    color = "yellow"
-                elif item.status_code < 300:
+                if item.status_code < 300:
                     color = "green"
-                elif 300 <= item.status_code < 400:
+                elif (300 <= item.status_code < 400) or item.status_code is None:
                     color = "yellow"
                 else:
                     color = "red"

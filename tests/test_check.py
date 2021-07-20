@@ -13,10 +13,14 @@ import deadlink
         ("https://httpstat.us/302", "Non-permanent redirects"),
         ("https://httpstat.us/500", "Server errors"),
         ("https://httpstat.us/200?sleep=99999", "Timeouts"),
+        ("https://httpstat.us/XYZ", "Ignored"),
     ],
 )
 def test_check(url, category):
-    out = deadlink.categorize_urls({url}, timeout=1.0)
+    out = deadlink.categorize_urls(
+        {url}, timeout=1.0, is_allowed=lambda url: "XYZ" not in url
+    )
+    print(out)
     assert len(out[category]) == 1
     deadlink._main.print_to_screen(out)
 
