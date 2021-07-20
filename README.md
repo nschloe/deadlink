@@ -20,11 +20,12 @@ and use as
 <!--TODO activate-->
 <!--pytest-codeblocks:skip-->
 ```sh
-deadlink-check README.md   # or multiple files/directories
+deadlink check README.md   # or multiple files/directories
+# or deadlink c README.md
 ```
 To explicitly allow or ignore certain URLs, use
 ```
-deadlink-check README.md -a http: -i stackoverflow.com github
+deadlink check README.md -a http: -i stackoverflow.com github
 ```
 This only considers URLs containing `http:` and _not_ containing `stackoverflow.com` or
 `github`. You can also place allow and ignore lists in the config file
@@ -45,13 +46,15 @@ igonore_files = [
 ```
 See
 ```
-deadlink-check -h
+deadlink check -h
 ```
-for all options. Use
+for all options.
+Use
 ```
-deadlink-replace-redirects paths-or-files
+deadlink replace-redirects paths-or-files
+# or deadlink rr paths-or-files
 ```
-to replace redirects in the given files. The same filters as for `deadlink-check` apply.
+to replace redirects in the given files. The same filters as for `deadlink check` apply.
 
 Example output:
 
