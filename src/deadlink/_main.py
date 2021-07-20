@@ -46,7 +46,7 @@ async def _get_return_code(
 
         try:
             r = await client.head(url, allow_redirects=False, timeout=timeout)
-        except httpx.ConnectTimeout:
+        except httpx.TimeoutException:
             seq.append(Info(998, url))
             break
         except httpx.HTTPError:
