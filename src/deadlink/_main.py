@@ -44,8 +44,17 @@ async def _get_return_code(
             seq.append(Info(None, url))
             break
 
+        # Pretend to be a browser <https://stackoverflow.com/a/31597823/353337>.
+        # If we don't do this, sometimes we'll get a 403 where browsers don't (e.g.,
+        # JSTOR).
+        headers = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36"
+        }
+
         try:
-            r = await client.head(url, allow_redirects=False, timeout=timeout)
+            r = await client.head(
+                url, allow_redirects=False, timeout=timeout, headers=headers
+            )
         except httpx.TimeoutException:
             seq.append(Info(998, url))
             break
