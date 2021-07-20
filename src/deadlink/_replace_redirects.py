@@ -60,11 +60,8 @@ def replace_redirects(args):
         return 0
 
     print_to_screen({"Successful permanent redirects": redirects})
-    print()
-    if len(redirects) == 1:
-        print("Replace this 1 redirect? [y/N] ", end="")
-    else:
-        print(f"Replace those {len(redirects)} redirects? [y/N] ", end="")
+    rdr = "redirect" if len(redirects) == 1 else "redirects"
+    print(f"\nReplace those {len(redirects)} {rdr}? [y/N] ", end="")
 
     if args.yes:
         print("Auto yes.")
@@ -83,9 +80,8 @@ def replace_redirects(args):
             for p in path.rglob("*"):
                 if p.is_file():
                     replace_in_file(p, replace)
-        elif path.is_file():
-            replace_in_file(path, replace)
         else:
-            raise ValueError(f"Could not find path {path}")
+            assert path.is_file()
+            replace_in_file(path, replace)
 
     return 0
