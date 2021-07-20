@@ -50,7 +50,7 @@ deadlink check -h
 ```
 for all options.
 Use
-```
+```sh
 deadlink replace-redirects paths-or-files
 # or deadlink rr paths-or-files
 ```

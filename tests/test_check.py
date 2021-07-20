@@ -1,20 +1,23 @@
+import pytest
+
 import deadlink
 
 
-def test_check():
-    out = deadlink.categorize_urls({"https://httpstat.us/200"})
-    assert len(out["OK"]) == 1
-
-    out = deadlink.categorize_urls({"https://httpstat.us/404"})
-    assert len(out["Client errors"]) == 1
-
-    # "other errors"
-    out = deadlink.categorize_urls({"https://this-doesnt-exist.doesit"})
-    assert len(out["Other errors"]) == 1
-
-    # redirect
-    out = deadlink.categorize_urls({"https://httpstat.us/301"})
-    assert len(out["Successful permanent redirects"]) == 1
+@pytest.mark.parametrize(
+    "url,category",
+    [
+        ("https://httpstat.us/200", "OK"),
+        ("https://httpstat.us/404", "Client errors"),
+        ("https://this-doesnt-exist.doesit", "Other errors"),
+        ("https://httpstat.us/301", "Successful permanent redirects"),
+        ("https://httpstat.us/500", "Server errors"),
+        # ("https://httpstat.us/200?sleep=99999", "Timeouts")
+    ],
+)
+def test_check(url, category):
+    out = deadlink.categorize_urls({url})
+    assert len(out[category]) == 1
+    deadlink._main.print_to_screen(out)
 
 
 def test_preserve_fragment():
