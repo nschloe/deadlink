@@ -61,6 +61,13 @@ Example output:
 ![](https://nschloe.github.io/deadlink/example-output-carbon.png)
 
 
+#### Similar projects:
+
+ * [awesome_bot](https://github.com/dkhamsing/awesome_bot)
+ * [brok](https://github.com/smallhadroncollider/brok)
+ * [link-verifier](https://github.com/bmuschko/link-verifier)
+
+
 ### License
 deadlink is published under the [MIT
 license](https://en.wikipedia.org/wiki/MIT_License).
