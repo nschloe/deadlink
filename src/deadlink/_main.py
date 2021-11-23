@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable
 from urllib.parse import urlsplit, urlunsplit
 
 import appdirs
@@ -33,9 +35,9 @@ async def _get_return_code(
     url: str,
     client,
     timeout: float,
-    follow_codes: List[int],
+    follow_codes: list[int],
     max_num_redirects: int = 10,
-    is_allowed: Optional[Callable] = None,
+    is_allowed: Callable | None = None,
 ):
     k = 0
     seq = []
@@ -53,7 +55,7 @@ async def _get_return_code(
 
         try:
             r = await client.head(
-                url, allow_redirects=False, timeout=timeout, headers=headers
+                url, follow_redirects=False, timeout=timeout, headers=headers
             )
         except httpx.TimeoutException:
             seq.append(Info(998, url))
@@ -110,8 +112,8 @@ async def _get_all_return_codes(
     timeout: float,
     max_connections: int,
     max_keepalive_connections: int,
-    follow_codes: List[int],
-    is_allowed: Optional[Callable] = None,
+    follow_codes: list[int],
+    is_allowed: Callable | None = None,
 ):
     # return await asyncio.gather(*map(_get_return_code, urls))
     ret = []
@@ -148,7 +150,7 @@ def find_non_hidden_files(root):
                     yield from find_non_hidden_files(path)
 
 
-def find_files(paths: List[str]):
+def find_files(paths: list[str]):
     return [filepath for path in paths for filepath in find_non_hidden_files(path)]
 
 
@@ -156,7 +158,7 @@ def find_urls(files):
     return set(url for f in files for url in _get_urls_from_file(f))
 
 
-def replace_in_string(content: str, replacements: Dict[str, str]):
+def replace_in_string(content: str, replacements: dict[str, str]):
     # register where to replace what
     repl = [
         (m.span(0), replacements[m.group(0)])
@@ -176,7 +178,7 @@ def replace_in_string(content: str, replacements: Dict[str, str]):
     return "".join(out)
 
 
-def replace_in_file(p, redirects: Dict[str, str]):
+def replace_in_file(p, redirects: dict[str, str]):
     # read
     try:
         with open(p) as f:
@@ -203,7 +205,7 @@ def read_config():
     return out
 
 
-def is_allowed(item, allow_set: Set[str], ignore_set: Set[str]):
+def is_allowed(item, allow_set: set[str], ignore_set: set[str]) -> bool:
     is_allowed = True
 
     if is_allowed:
@@ -222,11 +224,11 @@ def is_allowed(item, allow_set: Set[str], ignore_set: Set[str]):
 
 
 def categorize_urls(
-    urls: Set[str],
+    urls: set[str],
     timeout: float = 10.0,
     max_connections: int = 100,
     max_keepalive_connections: int = 10,
-    is_allowed: Optional[Callable] = None,
+    is_allowed: Callable | None = None,
 ):
     # only follow permanent redirects
     follow_codes = [301]

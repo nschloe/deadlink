@@ -17,6 +17,7 @@ import deadlink
     ],
 )
 def test_check(url, category):
+    print(url)
     out = deadlink.categorize_urls(
         {url}, timeout=1.0, is_allowed=lambda url: "XYZ" not in url
     )
@@ -32,6 +33,7 @@ def test_preserve_fragment():
     assert out["Successful permanent redirects"][0][-1].url == url2
 
 
+@pytest.mark.skip("URL doesn't exist anymore")
 def test_relative_redirect():
     url = "http://numpy-discussion.10968.n7.nabble.com/NEP-31-Context-local-and-global-overrides-of-the-NumPy-API-tp47452p47472.html"
     url2 = "http://numpy-discussion.10968.n7.nabble.com/NEP-31-Context-local-and-global-overrides-of-the-NumPy-API-td47452.html#a47472"
