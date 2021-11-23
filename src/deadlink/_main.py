@@ -328,9 +328,9 @@ def print_to_screen(d):
 
                 sc = "xxx" if item.status_code is None else item.status_code
                 if k == 0:
-                    console.print(f"   {sc}:   {item.url}", style=color)
+                    console.print(f"   [dim]{sc}[/]:   {item.url}", style=color)
                 else:
-                    console.print(f"   → {sc}: {item.url}", style=color)
+                    console.print(f"   → [dim]{sc}[/]: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
         if key not in d or len(d[key]) == 0:
@@ -341,6 +341,6 @@ def print_to_screen(d):
             url = item[0].url
             status_code = item[0].status_code
             if item[0].status_code < 900:
-                console.print(f"  {status_code}: {url}", style="red")
+                console.print(f"  [dim]{status_code}[/]: {url}", style="red")
             else:
                 console.print(f"  {url}", style="red")
