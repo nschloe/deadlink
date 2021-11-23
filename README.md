@@ -79,8 +79,3 @@ Example output:
 - [awesome_bot](https://github.com/dkhamsing/awesome_bot)
 - [brök](https://github.com/smallhadroncollider/brok)
 - [link-verifier](https://github.com/bmuschko/link-verifier)
-
-### License
-
-deadlink is published under the [MIT
-license](https://en.wikipedia.org/wiki/MIT_License).
