@@ -294,19 +294,19 @@ def print_to_screen(d):
     if key in d and len(d[key]) > 0:
         print()
         num = len(d[key])
-        console.print(f"{key} ({num})", style="green")
+        console.print(f"{key} ({num})", style="green", highlight=False)
 
     key = "Non-permanent redirects"
     if key in d and len(d[key]) > 0:
         print()
         num = len(d[key])
-        console.print(f"{key} ({num})", style="green")
+        console.print(f"{key} ({num})", style="green", highlight=False)
 
     key = "Ignored"
     if key in d and len(d[key]) > 0:
         print()
         num = len(d[key])
-        console.print(f"{key} ({num})", style="white")
+        console.print(f"{key} ({num})", style="white", highlight=False)
 
     keycol = [
         ("Successful permanent redirects", "yellow"),
@@ -316,7 +316,7 @@ def print_to_screen(d):
         if key not in d or len(d[key]) == 0:
             continue
         print()
-        console.print(f"{key} ({len(d[key])}):", style=base_color)
+        console.print(f"{key} ({len(d[key])}):", style=base_color, highlight=False)
         for seq in d[key]:
             for k, item in enumerate(seq):
                 if item.status_code < 300:
@@ -328,19 +328,19 @@ def print_to_screen(d):
 
                 sc = "xxx" if item.status_code is None else item.status_code
                 if k == 0:
-                    console.print(f"   {sc}:   {item.url}", style=color)
+                    console.print(f"   [dim]{sc}[/]:   {item.url}", style=color)
                 else:
-                    console.print(f"   → {sc}: {item.url}", style=color)
+                    console.print(f"   → [dim]{sc}[/]: {item.url}", style=color)
 
     for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
         if key not in d or len(d[key]) == 0:
             continue
         print()
-        console.print(f"{key} ({len(d[key])}):", style="red")
+        console.print(f"{key} ({len(d[key])}):", style="red", highlight=False)
         for item in d[key]:
             url = item[0].url
             status_code = item[0].status_code
             if item[0].status_code < 900:
-                console.print(f"  {status_code}: {url}", style="red")
+                console.print(f"  [dim]{status_code}[/]: {url}", style="red")
             else:
                 console.print(f"  {url}", style="red")
