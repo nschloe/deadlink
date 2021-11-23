@@ -5,7 +5,8 @@
 [![PyPi Version](https://img.shields.io/pypi/v/deadlink.svg?style=flat-square)](https://pypi.org/project/deadlink/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/deadlink.svg?style=flat-square)](https://pypi.org/project/deadlink/)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/deadlink.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/deadlink/)
-[![PyPi downloads](https://img.shields.io/pypi/dm/deadlink.svg?style=flat-square)](https://pypistats.org/packages/deadlink)
+[![Downloads](https://pepy.tech/badge/deadlink/month?style=flat-square)](https://pepy.tech/project/deadlink)
+<!--[![PyPi downloads](https://img.shields.io/pypi/dm/deadlink.svg?style=flat-square)](https://pypistats.org/packages/deadlink)-->
 
 [![gh-actions](https://img.shields.io/github/workflow/status/nschloe/deadlink/ci?style=flat-square)](https://github.com/nschloe/deadlink/actions?query=workflow%3Aci)
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/deadlink.svg?style=flat-square)](https://app.codecov.io/gh/nschloe/deadlink)
