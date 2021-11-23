@@ -55,7 +55,7 @@ async def _get_return_code(
 
         try:
             r = await client.head(
-                url, allow_redirects=False, timeout=timeout, headers=headers
+                url, follow_redirects=False, timeout=timeout, headers=headers
             )
         except httpx.TimeoutException:
             seq.append(Info(998, url))
