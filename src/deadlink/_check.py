@@ -8,7 +8,7 @@ from ._main import (
 )
 
 
-def check(args):
+def check(args) -> int:
     # get non-hidden files in non-hidden directories
     files = find_files(args.paths)
 
