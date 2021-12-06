@@ -3,6 +3,7 @@ from ._main import (
     find_files,
     find_urls,
     is_allowed,
+    plural,
     print_to_screen,
     read_config,
 )
@@ -43,10 +44,12 @@ def check(args) -> int:
     )
     num_ignored_urls = num_urls_before - len(urls)
 
-    print(
-        f"Found {len(urls)} unique URLs in {len(files)} files "
-        f"(ignored {num_ignored_files} files, {num_ignored_urls} URLs)"
-    )
+    urls_str = plural(len(urls), "unique URL")
+    files_str = plural(len(files), "file")
+    ifiles_str = plural(num_ignored_files, "file")
+    iurls_str = plural(num_ignored_urls, "URL")
+    print(f"Found {urls_str} in {files_str} (ignored {ifiles_str}, {iurls_str})")
+
     d = categorize_urls(
         urls,
         args.timeout,

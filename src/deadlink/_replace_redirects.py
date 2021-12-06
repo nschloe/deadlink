@@ -5,6 +5,7 @@ from ._main import (
     find_files,
     find_urls,
     is_allowed,
+    plural,
     print_to_screen,
     read_config,
     replace_in_file,
@@ -40,10 +41,11 @@ def replace_redirects(args):
 
     urls = find_urls(files)
 
-    print(
-        f"Found {len(urls)} unique URLs in {len(files)} files "
-        f"(ignored {num_ignored_files} files)"
-    )
+    urls_str = plural(len(urls), "unique URL")
+    files_str = plural(len(files), "file")
+    ifiles_str = plural(num_ignored_files, "file")
+    print(f"Found {urls_str} in {files_str} (ignored {ifiles_str})")
+
     d = categorize_urls(
         urls,
         args.timeout,
