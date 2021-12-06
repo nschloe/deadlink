@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+import ssl
 from collections import namedtuple
 from pathlib import Path
 from typing import Callable
@@ -58,11 +59,17 @@ async def _get_return_code(
                 url, follow_redirects=False, timeout=timeout, headers=headers
             )
         except httpx.TimeoutException:
-            seq.append(Info(998, url))
+            seq.append(Info(901, url))
             break
         except httpx.HTTPError:
-            # https://www.python-httpx.org/exceptions/
-            seq.append(Info(999, url))
+            seq.append(Info(902, url))
+            break
+        except ssl.SSLCertVerificationError:
+            seq.append(Info(903, url))
+            break
+        except Exception:
+            # Intercept all other errors
+            seq.append(Info(900, url))
             break
 
         seq.append(Info(r.status_code, url))
@@ -253,6 +260,8 @@ def categorize_urls(
         "Server errors": [],
         "Timeouts": [],
         "Other errors": [],
+        "Other HTTP errors": [],
+        "SSL certificate errors": [],
         "Ignored": [],
     }
     for item in r:
@@ -273,10 +282,14 @@ def categorize_urls(
             d["Client errors"].append(item)
         elif 500 <= status_code < 600:
             d["Server errors"].append(item)
-        elif status_code == 998:
-            d["Timeouts"].append(item)
-        elif status_code == 999:
+        elif status_code == 900:
             d["Other errors"].append(item)
+        elif status_code == 901:
+            d["Timeouts"].append(item)
+        elif status_code == 902:
+            d["Other HTTP errors"].append(item)
+        elif status_code == 903:
+            d["SSL certificate errors"].append(item)
         else:
             raise RuntimeError(f"Unknown status code {status_code}")
 
@@ -332,7 +345,14 @@ def print_to_screen(d):
                 else:
                     console.print(f"   → [dim]{sc}[/]: {item.url}", style=color)
 
-    for key in ["Client errors", "Server errors", "Timeouts", "Other errors"]:
+    for key in [
+        "Client errors",
+        "Server errors",
+        "Timeouts",
+        "Other errors",
+        "Other HTTP errors",
+        "SSL certificate errors",
+    ]:
         if key not in d or len(d[key]) == 0:
             continue
         print()
