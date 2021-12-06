@@ -111,6 +111,8 @@ async def _get_return_code(
 
         k += 1
 
+    print(seq)
+
     return seq
 
 
@@ -238,7 +240,10 @@ def categorize_urls(
     is_allowed: Callable | None = None,
 ):
     # only follow permanent redirects
-    follow_codes = [301]
+    follow_codes = [
+        301,  # Moved Permanently
+        308,  # Permanent Redirect
+    ]
     r = asyncio.run(
         _get_all_return_codes(
             urls,
