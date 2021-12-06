@@ -11,6 +11,7 @@ import deadlink
         ("https://this-doesnt-exist.doesit", "Other HTTP errors"),
         ("https://httpstat.us/301", "Successful permanent redirects"),
         ("https://httpstat.us/302", "Non-permanent redirects"),
+        ("https://httpstat.us/308", "Successful permanent redirects"),
         ("https://httpstat.us/500", "Server errors"),
         ("https://httpstat.us/200?sleep=99999", "Timeouts"),
         ("https://httpstat.us/XYZ", "Ignored"),
