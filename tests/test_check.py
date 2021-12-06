@@ -8,7 +8,7 @@ import deadlink
     [
         ("https://httpstat.us/200", "OK"),
         ("https://httpstat.us/404", "Client errors"),
-        ("https://this-doesnt-exist.doesit", "Other errors"),
+        ("https://this-doesnt-exist.doesit", "Other HTTP errors"),
         ("https://httpstat.us/301", "Successful permanent redirects"),
         ("https://httpstat.us/302", "Non-permanent redirects"),
         ("https://httpstat.us/500", "Server errors"),
