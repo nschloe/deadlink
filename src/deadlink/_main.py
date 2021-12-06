@@ -111,8 +111,6 @@ async def _get_return_code(
 
         k += 1
 
-    print(seq)
-
     return seq
 
 
@@ -369,3 +367,10 @@ def print_to_screen(d):
                 console.print(f"  [dim]{status_code}[/]: {url}", style="red")
             else:
                 console.print(f"  {url}", style="red")
+
+
+def plural(number: int, noun: str) -> str:
+    out = str(number) + " " + noun
+    if number != 1:
+        out += "s"
+    return out
