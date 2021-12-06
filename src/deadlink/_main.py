@@ -111,8 +111,6 @@ async def _get_return_code(
 
         k += 1
 
-    print(seq)
-
     return seq
 
 
