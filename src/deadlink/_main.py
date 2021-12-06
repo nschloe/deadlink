@@ -276,7 +276,7 @@ def categorize_urls(
         elif 200 <= status_code < 300:
             d["OK"].append(item)
         elif 300 <= status_code < 400:
-            if status_code == 301:
+            if status_code in [301, 308]:
                 if 200 <= item[-1].status_code < 400:
                     d["Successful permanent redirects"].append(item)
                 else:
