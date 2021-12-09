@@ -35,7 +35,7 @@ def cli(argv=None):
         help="display version information",
     )
 
-    subparsers = parser.add_subparsers(title="subcommands")
+    subparsers = parser.add_subparsers(title="subcommands", required=True)
 
     subparser_check = subparsers.add_parser(
         "check", help="Check for dead links", aliases=["c"]

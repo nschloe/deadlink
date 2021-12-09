@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 
 from ._main import (
@@ -40,6 +41,11 @@ def replace_redirects(args):
         ignore_patterns = ignore_patterns.union(set(d["ignore_urls"]))
 
     urls = find_urls(files)
+
+    # Shuffle the urls. In case there's rate limiting (e.g., on github.com),
+    # different URLs are checked on every turn.
+    urls = list(urls)
+    random.shuffle(urls)
 
     urls_str = plural(len(urls), "unique URL")
     files_str = plural(len(files), "file")
