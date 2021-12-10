@@ -35,7 +35,14 @@ def cli(argv=None):
         help="display version information",
     )
 
-    subparsers = parser.add_subparsers(title="subcommands", required=True)
+    subparsers = parser.add_subparsers(
+        title="subcommands",
+        required=True,
+        # Keep the next line around until the fix in
+        # <https://bugs.python.org/issue29298> (2021-07-23) can be considered
+        # "distributed enough".
+        dest="func",
+    )
 
     subparser_check = subparsers.add_parser(
         "check", help="Check for dead links", aliases=["c"]
