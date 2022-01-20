@@ -1,25 +1,15 @@
 import argparse
 from sys import version_info
 
+from .__about__ import __version__
 from ._check import check
 from ._replace_redirects import replace_redirects
 
 
 def get_version_text(prog):
-    try:
-        from importlib import metadata
-    except ImportError:
-        # Python 3.7 and earlier
-        version = "unknown"
-    else:
-        try:
-            version = metadata.version("deadlink")
-        except Exception:
-            version = "unknown"
-
-    copyright = "Copyright (c) 2021 Nico Schlömer <nico.schloemer@gmail.com>"
+    copyright = "Copyright (c) 2021-2022 Nico Schlömer <nico.schloemer@gmail.com>"
     python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
-    return "\n".join([f"{prog} {version} [Python {python_version}]", copyright])
+    return "\n".join([f"{prog} {__version__} [Python {python_version}]", copyright])
 
 
 def cli(argv=None):
