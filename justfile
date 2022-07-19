@@ -1,4 +1,5 @@
-version := `python3 -c "from src.deadlink.__about__ import __version__; print(__version__)"`
+# version := `python3 -c "from src.deadlink.__about__ import __version__; print(__version__)"`
+version := `python3 -c 'exec(open("./src/deadlink/__about__.py").read()); print(__version__)'`
 
 default:
 	@echo "\"just publish\"?"
