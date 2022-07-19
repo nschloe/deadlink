@@ -23,7 +23,7 @@ pip install deadlink
 and use as
 
 <!--TODO activate-->
-<!--pytest-codeblocks:skip-->
+<!--pytest.mark.skip-->
 
 ```sh
 deadlink check README.md   # or multiple files/directories
